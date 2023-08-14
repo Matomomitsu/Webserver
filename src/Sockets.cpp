@@ -6,7 +6,7 @@
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/08 16:05:48 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/08/10 19:18:00 by mtomomit         ###   ########.fr       */
+/*   Updated: 2023/08/11 18:19:39 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,7 @@ std::string itoa(int num) {
 
 void	Sockets::handleError(std::string functionName, int epoll_fd, struct addrinfo *servinfo)
 {
-	std::cout << functionName << " error: " << gai_strerror(errno) << std::endl;
+	std::cerr << functionName << " error: " << gai_strerror(errno) << std::endl;
 	for (std::map<int, bool>::iterator it = (this->serverSockets).begin(); it != (this->serverSockets).end(); ++it)
 	{
 		epoll_ctl(epoll_fd, EPOLL_CTL_DEL, it->first, NULL);
@@ -48,7 +48,7 @@ void	Sockets::handleError(std::string functionName, int epoll_fd, struct addrinf
 	{
 		freeaddrinfo(servinfo);
 	}
-	exit(0);
+	throw FunctionException();
 }
 
 void Sockets::setNonBlocking(int fd)
@@ -105,3 +105,7 @@ void	Sockets::closeSockets(int epoll_fd)
 		close(*it);
 	}
 }
+
+const char *Sockets::FunctionException::what() const throw(){
+	return ("");
+};

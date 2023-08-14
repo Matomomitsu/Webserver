@@ -27,7 +27,7 @@ server {
 
 
 server {
-	listen 127.0.0.30:3490;
+	listen 127.0.0.251:3490;
 	server_name www.localhost.com localhost.comdasdad;
 	root server_root;
 	index index.html index.php;

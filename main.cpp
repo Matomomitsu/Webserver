@@ -21,7 +21,7 @@ void signalHandler(int signal_num){
 	stop_server = true;
 }
 
-std::string testeCaminhoDoRecurso; 
+std::string testeCaminhoDoRecurso;
 
 void handleClient(Server web, int client_sock, Epoll *epoll, std::list<int> clientSockets)
 {
@@ -47,7 +47,6 @@ void handleClient(Server web, int client_sock, Epoll *epoll, std::list<int> clie
         }
         else
             send(client_sock, http_response.c_str(), http_response.length(), 0);
-		
 	}
 	else if (bytesRead == 0)
 	{
@@ -83,8 +82,13 @@ int main (int argc, char *argv[]){
 
     web = parser.parserFile(argv[1]);
     run(web);
-    sockets.createSockets(web, &epoll.event, epoll.epoll_fd);
-    while (!stop_server)
+	try{
+		sockets.createSockets(web, &epoll.event, epoll.epoll_fd);
+	}
+	catch(std::exception &e){
+		stop_server = true;
+	}
+	while (!stop_server)
 	{
 		struct epoll_event events[MAX_EVENTS];
 		int num_events = epoll_wait(epoll.epoll_fd, events, MAX_EVENTS, -1);

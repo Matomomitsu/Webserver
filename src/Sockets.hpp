@@ -6,7 +6,7 @@
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/08 16:05:51 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/08/10 19:12:53 by mtomomit         ###   ########.fr       */
+/*   Updated: 2023/08/11 18:15:45 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,6 +41,11 @@ class Sockets {
 
 		std::list<int> clientSockets;
 		std::map<int, bool> serverSockets;
+
+		class	FunctionException : public std::exception{
+			public:
+				virtual const char *what() const throw();
+		};
 
 	private:
 		void	handleError(std::string functionName, int epollFd, addrinfo *servinfo);
