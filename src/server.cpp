@@ -2,6 +2,12 @@
 # include "../parser/Parser.hpp"
 # include "./Webserver.hpp"
 
+std::string itoa(int num) {
+	std::ostringstream oss;
+	oss << num;
+	return oss.str();
+}
+
 std::string Server::getRequestPathFile(void){
     return (this->getPathResource);
 }
@@ -39,17 +45,19 @@ std::string  Server::getResponseFile(std::string responseRequestFilePath){
         }
         file.close();
     }
-    else 
+    else
         return("Error 404");
     response = createResponseMessage(content);
     return (response);
 }
 
 std::string  Server::createResponseMessage(std::string body){
+    std::string body_size = itoa(body.size());
     std::string response = "HTTP/1.1 200 OK\r\n"
                             "Content-Type: text/html\r\n"
+                            "Content-Length: " + body_size + "\r\n"
                             "\r\n"
-                            + body + "\r\n";
+                            + body;
     return(response);
 }
 
@@ -64,7 +72,7 @@ bool  Server::checkGetRequest( const std::string& message, std::string method)
     std::string requisiton = message.substr(startLine, methodSize);
 
     size_t resourcePathStart = message.find("/", startLine + methodSize);
-    
+
     if (resourcePathStart != startLine + methodSize + 1){
         std::cout << "Wrong messa in request: " << message << std::endl;
         return(false);
@@ -123,12 +131,12 @@ bool  Server::checkType( const std::string& requestMessage)
 
     else if (requestMessage.substr(0, 4) == "POST")
         isTypeCorrect = checkGetRequest(requestMessage, "POST");
- 
+
     else if (requestMessage.substr(0, 6) == "DELETE")
         isTypeCorrect = checkGetRequest(requestMessage, "DELETE");
-    
+
     return(isTypeCorrect);
-        
+
 }
 
 std::string Server::getItemFromMap(Server web, std::string chavePrincipal, std::string chaveSecundaria, std::string valor){

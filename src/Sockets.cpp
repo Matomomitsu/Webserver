@@ -6,7 +6,7 @@
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/08 16:05:48 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/08/11 18:19:39 by mtomomit         ###   ########.fr       */
+/*   Updated: 2023/08/14 20:17:53 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,13 +27,6 @@ Sockets & Sockets::operator=(Sockets const & rhs){
 Sockets::Sockets(Sockets const & src){
 	*this = src;
 	return ;
-}
-
-
-std::string itoa(int num) {
-	std::ostringstream oss;
-	oss << num;
-	return oss.str();
 }
 
 void	Sockets::handleError(std::string functionName, int epoll_fd, struct addrinfo *servinfo)
