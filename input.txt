@@ -14,10 +14,9 @@ server {
 		limit_except GET;
 		client_max_body_size 100;
 	}
-	bataaaaaa
 	location /put {
 		limit_except PUT;
-		root test/www/put aaaaaaa;
+		root test/www/put;
 	}
 	location /delete {
 		limit_except DELETE;

@@ -13,18 +13,19 @@ server {
 	location / {
 		limit_except GET;
 		client_max_body_size 100;
+		client_max_body_size 100;
+		root test/www/;
 	}
-	bataaaaaa
-	location /put {
+	location /utils/index.html {
+		index index.css;
 		limit_except PUT;
-		root test/www/put aaaaaaa;
+		root test/www/put;
 	}
 	location /delete {
 		limit_except DELETE;
 		root test/www/delete;
 	}
 }
-
 
 server {
 	listen 127.0.0.251:3490;

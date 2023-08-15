@@ -39,7 +39,8 @@ void handleClient(Server web, int client_sock, Epoll *epoll, std::list<int> clie
             //fazer exceção
 
 		std::string pathGetRequestFile = web.getRequestPathFile();
-		std::string http_response = web.responseRequest(pathGetRequestFile);
+		std::cout << "caminhooooooooooooooooooo: " << pathGetRequestFile << std::endl;
+		std::string http_response = web.responseRequest(web, pathGetRequestFile);
 
 		if (http_response == "Error 404"){
             std::string response = "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 13\r\n\r\n404 Not Found";
@@ -81,7 +82,7 @@ int main (int argc, char *argv[]){
     sigaction(SIGINT, &sigIntHandler, NULL);
 
     web = parser.parserFile(argv[1]);
-    run(web);
+    //run(web);
 	try{
 		sockets.createSockets(web, &epoll.event, epoll.epoll_fd);
 	}

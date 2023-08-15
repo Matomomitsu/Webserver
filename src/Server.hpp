@@ -21,15 +21,17 @@ class Server{
         std::map<std::string, std::map<std::string, std::string> > serverMap;
         std::map<std::string, std::map<std::string, std::string> > locationMap;
         std::string getPathResource;
+        std::string hostMessageReturn;
 
         void printMap(std::map<std::string, std::map<std::string, std::string> > map);
         std::string getItemFromMap(Server web, std::string chavePrincipal, std::string chaveSecundaria, std::string valor);
-        std::string  responseRequest(std::string RequestPathResource);
+        std::string  responseRequest(Server web, std::string RequestPathResource);
         std::string  getResponseFile(std::string responseRequestFilePath);
         std::string  createResponseMessage(std::string body);
         bool  checkGetRequest( const std::string& message, std::string method);
         bool  checkType( const std::string& requestMessage);
         std::string getRequestPathFile(void);
+        std::string  findLocationRoot(Server web, std::string RequestPathResource);
 
     private:
 };

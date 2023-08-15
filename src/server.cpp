@@ -12,13 +12,29 @@ std::string Server::getRequestPathFile(void){
     return (this->getPathResource);
 }
 
-std::string  Server::responseRequest(std::string RequestPathResource){
+std::string  Server::findFile(Server web, std::string RequestPathResource)
+
+std::string  Server::findLocationRoot(Server web, std::string RequestPathResource){
+    std::string pathToFind = "Path " + RequestPathResource;
+    std::map<std::string, std::map<std::string, std::string> >::iterator outerIt;
+
+    for (outerIt = web.locationMap.begin(); outerIt != web.locationMap.end(); ++outerIt){
+        if (outerIt->first == "Server " + web.hostMessageReturn){
+            std::map<std::string, std::string>& innerMap = outerIt->second;
+
+            std::map<std::string, std::string>::iterator innerIt = innerMap.find("root " + RequestPathResource);
+            std::string value = innerIt->second;
+            std::cout << "Valor associado à chave 'root': " << value << std::endl;
+        }
+    }
+    return("abc");
+}
+
+std::string  Server::responseRequest(Server web, std::string RequestPathResource){
+
+    findLocationRoot(web,RequestPathResource);
+
     std::map<std::string, std::string> keyValueMap;
-    keyValueMap["path1"] = "/teste/abc";
-    keyValueMap["path2"] = "/teste/abc2";
-    keyValueMap["path3"] = "/teste/abc";
-    keyValueMap["path4"] = "/teste/abc2";
-    keyValueMap["path5"] = "/utils/index.html";
     std::string response;
 
     for (std::map<std::string, std::string>::iterator it = keyValueMap.begin(); it != keyValueMap.end(); ++it){
@@ -119,10 +135,12 @@ bool  Server::checkGetRequest( const std::string& message, std::string method)
     std::cout << "Porta: " << port << std::endl;
 
     this->getPathResource = resourcePath;
+    this->hostMessageReturn = ipAddress;
+
     return (true);
 }
 
-bool  Server::checkType( const std::string& requestMessage)
+bool  Server::checkType(const std::string& requestMessage)
 {
     bool isTypeCorrect;
 
