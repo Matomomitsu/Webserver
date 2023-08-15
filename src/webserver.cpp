@@ -7,5 +7,5 @@
 void run(Server web){
     std::string port;
 
-    web.printMap(web.locationMap);
+    web.printMap(web.serverMap);
 }

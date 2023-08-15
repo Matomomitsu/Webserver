@@ -47,40 +47,48 @@ std::vector<std::string> Server::splitPath(const std::string& path, char delimit
     return (segments);
 }
 
-std::string  Server::findLocationRoot(Server web, std::string& RequestPathResource){
+std::string  Server::findLocationRoot(Server web, std::string RequestPathResource){
     std::map<std::string, std::map<std::string, std::string> >::iterator outerIt;
     std::vector<std::string> pathSegments;
-    std::string locationPath;
 
     std::cout << "Valor associado à chave 'root': " << RequestPathResource << std::endl;
     for (outerIt = web.locationMap.begin(); outerIt != web.locationMap.end(); ++outerIt){
         if (outerIt->first == "Server " + web.hostMessageReturn){
             pathSegments = splitPath(RequestPathResource, '/');
-            locationPath = checkLocationPath(pathSegments, outerIt->second);
-            std::cout << locationPath << std::endl;
-            if (!locationPath.empty())
-                RequestPathResource  = locationPath + RequestPathResource;
+            web.locationPath = checkLocationPath(pathSegments, outerIt->second);
+            std::cout << web.locationPath << std::endl;
+            if (web.locationPath.empty())
+            {
+                std::map<std::string, std::map<std::string, std::string> >::iterator serverIt;
+                for (serverIt = web.serverMap.begin(); serverIt != web.serverMap.end(); ++serverIt)
+                {
+                    if (serverIt->first == "Server " + web.hostMessageReturn)
+                        web.locationPath = serverIt->second["root"];
+                }
+            }
+            RequestPathResource = web.locationPath + RequestPathResource;
         }
     }
     return(RequestPathResource);
 }
 
 std::string  Server::responseRequest(Server web, std::string RequestPathResource){
+    std::string fullRequestPathResource;
 
-    findLocationRoot(web,RequestPathResource);
-    std::cout << "Valor associado à chave 'root': " << RequestPathResource << std::endl;
+    fullRequestPathResource = findLocationRoot(web,RequestPathResource);
     std::map<std::string, std::string> keyValueMap;
     std::string response;
 
-    response = getResponseFile(RequestPathResource);
+    response = getResponseFile(fullRequestPathResource, web, RequestPathResource);
     return(response);
 }
 
-std::string  Server::getResponseFile(std::string responseRequestFilePath){
+std::string  Server::getResponseFile(std::string responseRequestFilePath, Server web, std::string RequestPathResource){
     std::ifstream file(responseRequestFilePath.c_str());
     std::string content;
     std::string response;
 
+    std::cout << "Valor associado à chave 'root': " << responseRequestFilePath << std::endl;
     if (file.is_open()){
         std::string line;
         while(std::getline(file, line)){
@@ -89,7 +97,22 @@ std::string  Server::getResponseFile(std::string responseRequestFilePath){
         file.close();
     }
     else
+    {
+        std::map<std::string, std::map<std::string, std::string> >::iterator serverIt;
+        for (serverIt = web.serverMap.begin(); serverIt != web.serverMap.end(); ++serverIt)
+        {
+            if (serverIt->first == "Server " + web.hostMessageReturn)
+            {
+                if (web.locationPath != serverIt->second["root"])
+                {
+                    web.locationPath = serverIt->second["root"];
+                    responseRequestFilePath = serverIt->second["root"] + RequestPathResource;
+                    return (getResponseFile(responseRequestFilePath, web, RequestPathResource));
+                }
+            }
+        }
         return("Error 404");
+    }
     response = createResponseMessage(content);
     return (response);
 }
