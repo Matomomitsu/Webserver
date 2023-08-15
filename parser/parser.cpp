@@ -56,7 +56,7 @@ Server Parser::parserFile(std::string inputFilePath) {
     int errorPageCount = 0;
     int cgiCount = 0;
     bool insideLocationBlock = false;
-    
+
     if (arquivo.is_open()) {
          // Mapa para armazenar os blocos "server"
         std::string line;
@@ -68,7 +68,7 @@ Server Parser::parserFile(std::string inputFilePath) {
                 insideServerBlock = true;
             }
             if (insideServerBlock) { //isso pode estar em outra função.
-                
+
                 if (line.find("listen") != std::string::npos){
                     ipFromServer = "Server " + getIpFromInputFile(line);
                     serverMap[ipFromServer]["ip"] =  getIpFromInputFile(line);
@@ -76,7 +76,7 @@ Server Parser::parserFile(std::string inputFilePath) {
                 }
                 else if (line.find("server_name") != std::string::npos)
                     serverMap[ipFromServer]["server_name"] =  getValuesFromArchvie(line);
-                else if (line.find("root") != std::string::npos)
+                else if (line.find("root") != std::string::npos && serverMap[ipFromServer]["root"] == "")
                     serverMap[ipFromServer]["root"] =  getValuesFromArchvie(line);
                 else if (line.find("index") != std::string::npos)
                     serverMap[ipFromServer]["index"] =  getValuesFromArchvie(line);
@@ -102,7 +102,11 @@ Server Parser::parserFile(std::string inputFilePath) {
                 }
                 if (insideLocationBlock){
                     if (line.find('}') != std::string::npos)
+                    {
                         insideLocationBlock = false;
+                        if (locationMap[ipFromServer]["root "+locationPath] == "")
+                            locationMap[ipFromServer]["root "+locationPath] = serverMap[ipFromServer]["root"];
+                    }
                     else if (line.find("location") != std::string::npos){
                         locationMap[ipFromServer]["Path "+locationPath] =  locationPath;
                     }
@@ -119,5 +123,3 @@ Server Parser::parserFile(std::string inputFilePath) {
     arquivo.close();
     return serverInstance;
 }
-
-

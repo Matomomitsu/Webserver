@@ -39,11 +39,10 @@ void handleClient(Server web, int client_sock, Epoll *epoll, std::list<int> clie
             //fazer exceção
 
 		std::string pathGetRequestFile = web.getRequestPathFile();
-		std::cout << "caminhooooooooooooooooooo: " << pathGetRequestFile << std::endl;
 		std::string http_response = web.responseRequest(web, pathGetRequestFile);
 
 		if (http_response == "Error 404"){
-            std::string response = "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 13\r\n\r\n404 Not Found";
+            std::string response = "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 14\r\n\r\n404 Not Found\n";
              send(client_sock, response.c_str(), response.length(), 0);
         }
         else

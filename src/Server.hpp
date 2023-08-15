@@ -31,7 +31,9 @@ class Server{
         bool  checkGetRequest( const std::string& message, std::string method);
         bool  checkType( const std::string& requestMessage);
         std::string getRequestPathFile(void);
-        std::string  findLocationRoot(Server web, std::string RequestPathResource);
+        std::string  findLocationRoot(Server web, std::string& RequestPathResource);
+        std::vector<std::string> splitPath(const std::string& path, char delimiter);
+        std::string checkLocationPath(const std::vector<std::string>& pathSegments, std::map <std::string, std::string>& locationMap);
 
     private:
 };

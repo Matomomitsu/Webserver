@@ -12,41 +12,68 @@ std::string Server::getRequestPathFile(void){
     return (this->getPathResource);
 }
 
-std::string  Server::findFile(Server web, std::string RequestPathResource)
+std::string Server::checkLocationPath(const std::vector<std::string>& pathSegments, std::map <std::string, std::string>& location) {
+    std::string currentPath;
+    std::string matchingLocationPath;
 
-std::string  Server::findLocationRoot(Server web, std::string RequestPathResource){
-    std::string pathToFind = "Path " + RequestPathResource;
-    std::map<std::string, std::map<std::string, std::string> >::iterator outerIt;
-
-    for (outerIt = web.locationMap.begin(); outerIt != web.locationMap.end(); ++outerIt){
-        if (outerIt->first == "Server " + web.hostMessageReturn){
-            std::map<std::string, std::string>& innerMap = outerIt->second;
-
-            std::map<std::string, std::string>::iterator innerIt = innerMap.find("root " + RequestPathResource);
-            std::string value = innerIt->second;
-            std::cout << "Valor associado à chave 'root': " << value << std::endl;
+    currentPath += "root /";
+    {
+        std::map<std::string, std::string>::const_iterator locationPathIterator = location.find(currentPath);
+        if (locationPathIterator != location.end()) {
+            matchingLocationPath = locationPathIterator->second;
         }
     }
-    return("abc");
+    for (std::vector<std::string>::const_iterator segmentIterator = pathSegments.begin(); segmentIterator != pathSegments.end(); ++segmentIterator) {
+        currentPath += *segmentIterator;
+        std::map<std::string, std::string>::const_iterator locationPathIterator = location.find(currentPath);
+        if (locationPathIterator != location.end()) {
+            matchingLocationPath = locationPathIterator->second;
+        }
+        currentPath += "/";
+    }
+
+    return (matchingLocationPath);
+}
+
+std::vector<std::string> Server::splitPath(const std::string& path, char delimiter) {
+    std::vector<std::string> segments;
+    std::stringstream ss(path);
+    std::string segment;
+    while (std::getline(ss, segment, delimiter)) {
+        if (!segment.empty()) {
+            segments.push_back(segment);
+        }
+    }
+    return (segments);
+}
+
+std::string  Server::findLocationRoot(Server web, std::string& RequestPathResource){
+    std::map<std::string, std::map<std::string, std::string> >::iterator outerIt;
+    std::vector<std::string> pathSegments;
+    std::string locationPath;
+
+    std::cout << "Valor associado à chave 'root': " << RequestPathResource << std::endl;
+    for (outerIt = web.locationMap.begin(); outerIt != web.locationMap.end(); ++outerIt){
+        if (outerIt->first == "Server " + web.hostMessageReturn){
+            pathSegments = splitPath(RequestPathResource, '/');
+            locationPath = checkLocationPath(pathSegments, outerIt->second);
+            std::cout << locationPath << std::endl;
+            if (!locationPath.empty())
+                RequestPathResource  = locationPath + RequestPathResource;
+        }
+    }
+    return(RequestPathResource);
 }
 
 std::string  Server::responseRequest(Server web, std::string RequestPathResource){
 
     findLocationRoot(web,RequestPathResource);
-
+    std::cout << "Valor associado à chave 'root': " << RequestPathResource << std::endl;
     std::map<std::string, std::string> keyValueMap;
     std::string response;
 
-    for (std::map<std::string, std::string>::iterator it = keyValueMap.begin(); it != keyValueMap.end(); ++it){
-        if (it->second == RequestPathResource){
-            char ponto = '.';
-            RequestPathResource.insert(RequestPathResource.begin(), ponto);
-            response = getResponseFile(RequestPathResource);
-            return(response);
-        }
-    }
-    return("Error 404");
-
+    response = getResponseFile(RequestPathResource);
+    return(response);
 }
 
 std::string  Server::getResponseFile(std::string responseRequestFilePath){
@@ -68,12 +95,12 @@ std::string  Server::getResponseFile(std::string responseRequestFilePath){
 }
 
 std::string  Server::createResponseMessage(std::string body){
-    std::string body_size = itoa(body.size());
+    std::string body_size = itoa(body.size() + 1);
     std::string response = "HTTP/1.1 200 OK\r\n"
                             "Content-Type: text/html\r\n"
                             "Content-Length: " + body_size + "\r\n"
                             "\r\n"
-                            + body;
+                            + body + "\n";
     return(response);
 }
 
