@@ -83,12 +83,40 @@ std::string  Server::responseRequest(Server web, std::string RequestPathResource
     return(response);
 }
 
+bool Server::checkIfIsDirectory(Server web, std::string &path){
+
+    std::cout << web.getPathResource << std::endl;
+
+    std::string fileToReturn = getItemFromLocationMap(web, "Server " + web.hostMessageReturn, web.getPathResource + " index");
+    std::vector<std::string> files = splitPath(fileToReturn, ' ');
+    
+    for (size_t i = 0; i < files.size(); ++i){
+        std::cout << files[i] << std::endl;
+    }
+
+    DIR* directory = opendir(path.c_str());
+    if(directory)
+    {
+        std::cout << "is a directory" << std::endl;
+        closedir(directory);
+        return(true);
+    }
+    else
+    {
+        std::cout << "is NOT a directory" << std::endl;
+        closedir(directory);
+        return(false);
+    }
+}
+
 std::string  Server::getResponseFile(std::string responseRequestFilePath, Server web, std::string RequestPathResource){
+    checkIfIsDirectory(web, responseRequestFilePath);
+
     std::ifstream file(responseRequestFilePath.c_str());
     std::string content;
     std::string response;
 
-    std::cout << "Valor associado à chave 'root': " << responseRequestFilePath << std::endl;
+    
     if (file.is_open()){
         std::string line;
         while(std::getline(file, line)){
@@ -207,7 +235,22 @@ bool  Server::checkType(const std::string& requestMessage)
 
 }
 
-std::string Server::getItemFromMap(Server web, std::string chavePrincipal, std::string chaveSecundaria, std::string valor){
+std::string Server::getItemFromLocationMap(Server web, std::string chavePrincipal, std::string chaveSecundaria){
+
+    std::map<std::string, std::map<std::string, std::string> >::iterator outerIt;
+    for (outerIt = web.locationMap.begin(); outerIt != web.locationMap.end(); ++outerIt) {
+        if (outerIt->first == chavePrincipal) {
+            std::map<std::string, std::string>& innerMap = outerIt->second;
+
+            std::map<std::string, std::string>::iterator innerIt = innerMap.find(chaveSecundaria);
+            return(innerIt->second);
+        }
+    }
+    return("wrong");
+}
+
+
+std::string Server::getItemFromServerMap(Server web, std::string chavePrincipal, std::string chaveSecundaria){
 
     std::map<std::string, std::map<std::string, std::string> >::iterator outerIt;
     for (outerIt = web.serverMap.begin(); outerIt != web.serverMap.end(); ++outerIt) {
@@ -215,11 +258,7 @@ std::string Server::getItemFromMap(Server web, std::string chavePrincipal, std::
             std::map<std::string, std::string>& innerMap = outerIt->second;
 
             std::map<std::string, std::string>::iterator innerIt = innerMap.find(chaveSecundaria);
-            std::cout << "aqui    " << innerIt->second << std::endl;
-            if (innerIt != innerMap.end() && innerIt->second == valor) {
-                std::cout << "Chave externa: " << outerIt->first << ", Porta: " << innerIt->second << std::endl;
-                return(innerIt->second);
-            }
+            return(innerIt->second);
         }
     }
     return("wrong");

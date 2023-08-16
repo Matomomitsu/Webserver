@@ -78,7 +78,7 @@ Server Parser::parserFile(std::string inputFilePath) {
                     serverMap[ipFromServer]["server_name"] =  getValuesFromArchvie(line);
                 else if (line.find("root") != std::string::npos && serverMap[ipFromServer]["root"] == "")
                     serverMap[ipFromServer]["root"] =  getValuesFromArchvie(line);
-                else if (line.find("index") != std::string::npos)
+                else if (line.find("index") != std::string::npos && serverMap[ipFromServer]["index"] == "")
                     serverMap[ipFromServer]["index"] =  getValuesFromArchvie(line);
                 else if (line.find("error_page") != std::string::npos){
                     errorPageCount++;
@@ -106,6 +106,7 @@ Server Parser::parserFile(std::string inputFilePath) {
                         insideLocationBlock = false;
                         if (locationMap[ipFromServer]["root "+locationPath] == "")
                             locationMap[ipFromServer]["root "+locationPath] = serverMap[ipFromServer]["root"];
+                        //locationMap[ipFromServer]["index "+locationPath] += " " + serverMap[ipFromServer]["index"];
                     }
                     else if (line.find("location") != std::string::npos){
                         locationMap[ipFromServer]["Path "+locationPath] =  locationPath;
@@ -114,6 +115,8 @@ Server Parser::parserFile(std::string inputFilePath) {
                         locationMap[ipFromServer]["limit_except "+locationPath] =  getValuesFromArchvie(line);
                     else if (line.find("root") != std::string::npos)
                         locationMap[ipFromServer]["root "+locationPath] =  getValuesFromArchvie(line);
+                    else if (line.find("index") != std::string::npos)
+                        locationMap[ipFromServer]["index "+locationPath] =  getValuesFromArchvie(line);
                 }
             }
         }
