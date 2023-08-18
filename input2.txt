@@ -18,7 +18,7 @@ server {
 	}
 	location /put {
 		limit_except PUT;
-		index index.css index.php;
+		index index.html index.php;
 		root /test/www/put;
 	}
 	location /delete {

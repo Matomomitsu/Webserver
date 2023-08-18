@@ -12,7 +12,7 @@ std::string Server::getRequestPathFile(void){
     return (this->getPathResource);
 }
 
-std::string Server::checkLocationPath(const std::vector<std::string>& pathSegments, std::map <std::string, std::string>& location) {
+std::string Server::checkLocationRoot(const std::vector<std::string>& webPathSegments, std::map <std::string, std::string>& location, Server &web) {
     std::string currentPath;
     std::string matchingLocationPath;
 
@@ -21,13 +21,15 @@ std::string Server::checkLocationPath(const std::vector<std::string>& pathSegmen
         std::map<std::string, std::string>::const_iterator locationPathIterator = location.find(currentPath);
         if (locationPathIterator != location.end()) {
             matchingLocationPath = locationPathIterator->second;
+            web.locationPath = currentPath.substr(5, currentPath.length() - 5);
         }
     }
-    for (std::vector<std::string>::const_iterator segmentIterator = pathSegments.begin(); segmentIterator != pathSegments.end(); ++segmentIterator) {
+    for (std::vector<std::string>::const_iterator segmentIterator = webPathSegments.begin(); segmentIterator != webPathSegments.end(); ++segmentIterator) {
         currentPath += *segmentIterator;
         std::map<std::string, std::string>::const_iterator locationPathIterator = location.find(currentPath);
         if (locationPathIterator != location.end()) {
             matchingLocationPath = locationPathIterator->second;
+            web.locationPath = currentPath.substr(5, currentPath.length() - 5);
         }
         currentPath += "/";
     }
@@ -47,35 +49,30 @@ std::vector<std::string> Server::splitPath(const std::string& path, char delimit
     return (segments);
 }
 
-std::string  Server::findLocationRoot(Server web, std::string RequestPathResource){
+std::string  Server::findLocationRoot(Server &web, std::string RequestPathResource){
     std::map<std::string, std::map<std::string, std::string> >::iterator outerIt;
-    std::vector<std::string> pathSegments;
 
-    std::cout << "Valor associado à chave 'root': " << RequestPathResource << std::endl;
     for (outerIt = web.locationMap.begin(); outerIt != web.locationMap.end(); ++outerIt){
         if (outerIt->first == "Server " + web.hostMessageReturn){
-            pathSegments = splitPath(RequestPathResource, '/');
-            web.locationPath = checkLocationPath(pathSegments, outerIt->second);
-            std::cout << web.locationPath << std::endl;
-            if (web.locationPath.empty())
-            {
+            web.pathSegments = splitPath(RequestPathResource, '/');
+            web.locationRoot = checkLocationRoot(web.pathSegments, outerIt->second, web);
+            if (web.locationRoot.empty()){
                 std::map<std::string, std::map<std::string, std::string> >::iterator serverIt;
-                for (serverIt = web.serverMap.begin(); serverIt != web.serverMap.end(); ++serverIt)
-                {
+                for (serverIt = web.serverMap.begin(); serverIt != web.serverMap.end(); ++serverIt){
                     if (serverIt->first == "Server " + web.hostMessageReturn)
-                        web.locationPath = serverIt->second["root"];
+                        web.locationRoot = serverIt->second["root"];
                 }
             }
-            RequestPathResource = web.locationPath + RequestPathResource;
+            RequestPathResource = web.locationRoot + RequestPathResource.substr(web.locationPath.length(), RequestPathResource.length() - web.locationPath.length());
         }
     }
     return(RequestPathResource);
 }
 
-std::string  Server::responseRequest(Server web, std::string RequestPathResource){
+std::string  Server::responseRequest(Server &web, std::string RequestPathResource){
     std::string fullRequestPathResource;
 
-    fullRequestPathResource = findLocationRoot(web,RequestPathResource);
+    fullRequestPathResource = findLocationRoot(web, RequestPathResource);
     std::map<std::string, std::string> keyValueMap;
     std::string response;
 
@@ -83,41 +80,52 @@ std::string  Server::responseRequest(Server web, std::string RequestPathResource
     return(response);
 }
 
-bool Server::checkIfIsDirectory(Server web, std::string &path){
+void Server::addIndex(Server &web, std::string &path){
+    std::string currentPath;
+    std::string matchingLocationPath;
+    std::string fileToReturn = "index.html";
+    std::string temp;
 
-    std::cout << web.getPathResource << std::endl;
-
-    std::string fileToReturn = getItemFromLocationMap(web, "Server " + web.hostMessageReturn, web.getPathResource + " index");
+    if (web.locationRoot != getItemFromServerMap(web, "Server " + web.hostMessageReturn, "root")){
+        temp = getItemFromLocationMap(web, "Server " + web.hostMessageReturn, "index " + web.locationPath);
+        if (temp != "wrong")
+            fileToReturn = temp;
+    }
+    else{
+        fileToReturn = getItemFromServerMap(web, "Server " + web.hostMessageReturn, "index");
+        if (fileToReturn == "wrong")
+            fileToReturn = "index.html";
+    }
     std::vector<std::string> files = splitPath(fileToReturn, ' ');
-    
-    for (size_t i = 0; i < files.size(); ++i){
-        std::cout << files[i] << std::endl;
-    }
-
     DIR* directory = opendir(path.c_str());
-    if(directory)
-    {
-        std::cout << "is a directory" << std::endl;
+    if(directory){
+        struct dirent* entry;
+        while ((entry = readdir(directory)) != NULL){
+            for (std::vector<std::string>::const_iterator filesIterator = files.begin(); filesIterator != files.end(); ++filesIterator) {
+                if (*filesIterator == entry->d_name){
+                    path = path + "/" + entry->d_name;
+                    closedir(directory);
+                    return ;
+                }
+            }
+        }
         closedir(directory);
-        return(true);
+        return ;
     }
-    else
-    {
-        std::cout << "is NOT a directory" << std::endl;
+    else{
         closedir(directory);
-        return(false);
+        return ;
     }
 }
 
-std::string  Server::getResponseFile(std::string responseRequestFilePath, Server web, std::string RequestPathResource){
-    checkIfIsDirectory(web, responseRequestFilePath);
-
+std::string  Server::getResponseFile(std::string responseRequestFilePath, Server &web, std::string RequestPathResource){
+    addIndex(web, responseRequestFilePath);
     std::ifstream file(responseRequestFilePath.c_str());
     std::string content;
     std::string response;
+    DIR* directory = opendir(responseRequestFilePath.c_str());
 
-    
-    if (file.is_open()){
+    if (file.is_open() && !directory){
         std::string line;
         while(std::getline(file, line)){
             content += line;
@@ -131,17 +139,25 @@ std::string  Server::getResponseFile(std::string responseRequestFilePath, Server
         {
             if (serverIt->first == "Server " + web.hostMessageReturn)
             {
-                if (web.locationPath != serverIt->second["root"])
+                if (web.locationRoot != serverIt->second["root"])
                 {
-                    web.locationPath = serverIt->second["root"];
+                    web.locationRoot = serverIt->second["root"];
                     responseRequestFilePath = serverIt->second["root"] + RequestPathResource;
                     return (getResponseFile(responseRequestFilePath, web, RequestPathResource));
                 }
             }
         }
+        web.pathSegments.clear();
+        web.locationPath.clear();
+        web.locationRoot.clear();
+        std::vector<std::string>().swap(web.pathSegments);
         return("Error 404");
     }
     response = createResponseMessage(content);
+    web.pathSegments.clear();
+    web.locationPath.clear();
+    web.locationRoot.clear();
+    std::vector<std::string>().swap(web.pathSegments);
     return (response);
 }
 
@@ -204,7 +220,16 @@ bool  Server::checkGetRequest( const std::string& message, std::string method)
 
     std::string ipAddress = hostValue.substr(0, colonPos);
     std::string port = hostValue.substr(colonPos + 1);
+    struct hostent *he = gethostbyname(ipAddress.c_str());
+    struct in_addr **addr_list;
+    if (he == NULL)
+    {
+        std::cerr << "gethostbyname()" << std::endl;
+        return (false);
+    }
+    addr_list = (struct in_addr **)he->h_addr_list;
 
+    ipAddress = inet_ntoa(*addr_list[0]);
     // Imprimir os resultados
     std::cout << "Método: " << requisiton << std::endl;
     std::cout << "Caminho do recurso: " << resourcePath << std::endl;
@@ -235,7 +260,7 @@ bool  Server::checkType(const std::string& requestMessage)
 
 }
 
-std::string Server::getItemFromLocationMap(Server web, std::string chavePrincipal, std::string chaveSecundaria){
+std::string Server::getItemFromLocationMap(Server &web, std::string chavePrincipal, std::string chaveSecundaria){
 
     std::map<std::string, std::map<std::string, std::string> >::iterator outerIt;
     for (outerIt = web.locationMap.begin(); outerIt != web.locationMap.end(); ++outerIt) {
@@ -243,14 +268,15 @@ std::string Server::getItemFromLocationMap(Server web, std::string chavePrincipa
             std::map<std::string, std::string>& innerMap = outerIt->second;
 
             std::map<std::string, std::string>::iterator innerIt = innerMap.find(chaveSecundaria);
-            return(innerIt->second);
+            if (innerIt != innerMap.end())
+                return(innerIt->second);
         }
     }
     return("wrong");
 }
 
 
-std::string Server::getItemFromServerMap(Server web, std::string chavePrincipal, std::string chaveSecundaria){
+std::string Server::getItemFromServerMap(Server &web, std::string chavePrincipal, std::string chaveSecundaria){
 
     std::map<std::string, std::map<std::string, std::string> >::iterator outerIt;
     for (outerIt = web.serverMap.begin(); outerIt != web.serverMap.end(); ++outerIt) {
@@ -258,7 +284,8 @@ std::string Server::getItemFromServerMap(Server web, std::string chavePrincipal,
             std::map<std::string, std::string>& innerMap = outerIt->second;
 
             std::map<std::string, std::string>::iterator innerIt = innerMap.find(chaveSecundaria);
-            return(innerIt->second);
+            if (innerIt != innerMap.end())
+                return(innerIt->second);
         }
     }
     return("wrong");
