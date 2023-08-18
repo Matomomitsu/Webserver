@@ -143,6 +143,7 @@ std::string  Server::getResponseFile(std::string responseRequestFilePath, Server
                 {
                     web.locationRoot = serverIt->second["root"];
                     responseRequestFilePath = serverIt->second["root"] + RequestPathResource;
+                    closedir(directory);
                     return (getResponseFile(responseRequestFilePath, web, RequestPathResource));
                 }
             }
@@ -150,6 +151,7 @@ std::string  Server::getResponseFile(std::string responseRequestFilePath, Server
         web.pathSegments.clear();
         web.locationPath.clear();
         web.locationRoot.clear();
+        closedir(directory);
         std::vector<std::string>().swap(web.pathSegments);
         return("Error 404");
     }
@@ -157,6 +159,7 @@ std::string  Server::getResponseFile(std::string responseRequestFilePath, Server
     web.pathSegments.clear();
     web.locationPath.clear();
     web.locationRoot.clear();
+    closedir(directory);
     std::vector<std::string>().swap(web.pathSegments);
     return (response);
 }
@@ -220,16 +223,22 @@ bool  Server::checkGetRequest( const std::string& message, std::string method)
 
     std::string ipAddress = hostValue.substr(0, colonPos);
     std::string port = hostValue.substr(colonPos + 1);
-    struct hostent *he = gethostbyname(ipAddress.c_str());
-    struct in_addr **addr_list;
-    if (he == NULL)
-    {
-        std::cerr << "gethostbyname()" << std::endl;
-        return (false);
-    }
-    addr_list = (struct in_addr **)he->h_addr_list;
+    struct addrinfo hints = {}, *res;
+    char ipstr[INET6_ADDRSTRLEN];
 
-    ipAddress = inet_ntoa(*addr_list[0]);
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+
+    if (getaddrinfo(ipAddress.c_str(), NULL, &hints, &res) != 0)
+    {
+        std::cerr << "getaddrinfo() error" << std::endl;
+        return false;
+    }
+    struct sockaddr_in *ip = (struct sockaddr_in *)res->ai_addr;
+    void *addr = &(ip->sin_addr);
+    inet_ntop(res->ai_family, addr, ipstr, sizeof(ipstr));
+    ipAddress = ipstr;
+    freeaddrinfo(res);
     // Imprimir os resultados
     std::cout << "Método: " << requisiton << std::endl;
     std::cout << "Caminho do recurso: " << resourcePath << std::endl;
