@@ -2,7 +2,7 @@
 #include "./src/Server.hpp"
 #include "./src/Webserver.hpp"
 #include "./src/Sockets.hpp"
-#include "./src/Epoll.hpp"
+#include "./src/Request.hpp"
 #include <signal.h>
 #include <cstdlib>
 
@@ -22,44 +22,6 @@ void signalHandler(int signal_num){
 }
 
 std::string testeCaminhoDoRecurso;
-
-void handleClient(Server web, int client_sock, Epoll *epoll, std::list<int> clientSockets)
-{
-	char buffer[1024];
-	int bytesRead = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
-	buffer[bytesRead] = 0;
-	if (bytesRead > 0)
-	{
-		std::string message(buffer, bytesRead);
-		std::cout << "Received message from client: " << message;
-
-		if (web.checkType(message)) // Parte de validação da mensagem
-			printf("message in format\n");
-        //else
-            //fazer exceção
-
-		std::string pathGetRequestFile = web.getRequestPathFile();
-		std::string http_response = web.responseRequest(web, pathGetRequestFile);
-
-		if (http_response == "Error 404"){
-            std::string response = "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 14\r\n\r\n404 Not Found\n";
-             send(client_sock, response.c_str(), response.length(), 0);
-        }
-        else
-            send(client_sock, http_response.c_str(), http_response.length(), 0);
-	}
-	else if (bytesRead == 0)
-	{
-		std::cout << "Client disconnected" << std::endl;
-		epoll_ctl(epoll->epoll_fd, EPOLL_CTL_DEL, client_sock, NULL);
-		close(client_sock);
-		clientSockets.remove(client_sock);
-	}
-	else
-	{
-		std::cout << "Error occurred while receiving data" << std::endl;
-	}
-}
 
 
 int main (int argc, char *argv[]){
@@ -120,7 +82,7 @@ int main (int argc, char *argv[]){
 			{
 				if (events[i].events & EPOLLIN)
 				{
-					handleClient(web, fd, &epoll, sockets.clientSockets);
+					Request::handleClient(web, fd, &epoll, sockets.clientSockets);
 				}
 			}
 		}

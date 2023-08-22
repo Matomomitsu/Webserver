@@ -2,7 +2,7 @@ NAME = webserver
 CC = c++
 FLAGS = -Wall -Wextra -Werror -Wshadow -std=c++98
 LEAK = -fsanitize=address
-SOURCE = main.cpp ./src/server.cpp ./parser/parser.cpp ./src/webserver.cpp ./src/Sockets.cpp ./src/Epoll.cpp\
+SOURCE = main.cpp ./src/server.cpp ./parser/parser.cpp ./src/webserver.cpp ./src/Sockets.cpp ./src/Epoll.cpp ./src/Response.cpp ./src/Request.cpp\
 
 REMOVE = rm -rf
 
