@@ -6,27 +6,30 @@
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/08 16:05:51 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/08/11 18:15:45 by mtomomit         ###   ########.fr       */
+/*   Updated: 2023/08/23 13:54:14 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <iostream>
-#include <cerrno>
-#include <sys/epoll.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <map>
-#include <vector>
-#include <string>
-#include <csignal>
-#include <cstdlib>
-#include <list>
-#include <netdb.h>
-#include <sstream>
-#include "./Server.hpp"
+#ifndef SOCKETS_HPP
+# define SOCKETS_HPP
+
+# include <iostream>
+# include <cerrno>
+# include <sys/epoll.h>
+# include <sys/socket.h>
+# include <netinet/in.h>
+# include <arpa/inet.h>
+# include <fcntl.h>
+# include <unistd.h>
+# include <map>
+# include <vector>
+# include <string>
+# include <csignal>
+# include <cstdlib>
+# include <list>
+# include <netdb.h>
+# include <sstream>
+# include "./Server.hpp"
 
 class Sockets {
 	public:

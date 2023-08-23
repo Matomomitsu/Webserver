@@ -49,7 +49,6 @@ std::string getErrorNumber(const std::string& stringComplete){
 
     std::size_t pos2 = value.find(" ") ;
     if (pos2 != std::string::npos) {
-        //pos2 += 1;
         value = value.substr(0, pos2);
      }
     return value;
@@ -66,6 +65,7 @@ std::string getErrorPageValues(const std::string& stringComplete, std::string er
     if (pos2 != std::string::npos) {
         pos2 += 1;
         value = value.substr(pos2);
+        value = value.substr(0, value.length() - 1);
      }
     return value;
 }

@@ -137,7 +137,7 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
 
 		std::string pathGetRequestFile = web.getRequestPathFile();
 		std::string http_response = Response::responseRequest(web, pathGetRequestFile);
-        
+
 
 		if (http_response == "Error 404"){
             std::string body = createErrorMessage(web);
