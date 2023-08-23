@@ -30,11 +30,12 @@ int main (int argc, char *argv[]){
     Server web;
     Sockets			sockets;
 	Epoll			epoll;
+	std::string 	filePath;
 
-     if(argc != 2){
-       std::cout << "Erro no arquivo de entrada" << std::endl;
-       return(-1);
-    }
+    if(argc != 2)
+    	filePath = "./input2.txt";
+	else
+		filePath = argv[1];
 
     struct sigaction sigIntHandler;
     sigIntHandler.sa_handler = signalHandler;
@@ -42,7 +43,7 @@ int main (int argc, char *argv[]){
     sigIntHandler.sa_flags = 0;
     sigaction(SIGINT, &sigIntHandler, NULL);
 
-    web = parser.parserFile(argv[1]);
+    web = parser.parserFile(filePath.c_str());
     //run(web);
 	try{
 		sockets.createSockets(web, &epoll.event, epoll.epoll_fd);

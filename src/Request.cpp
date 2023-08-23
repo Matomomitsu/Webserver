@@ -72,7 +72,7 @@ bool  Request::checkGetRequest( Server &web, const std::string& message, std::st
     std::cout << "Porta: " << port << std::endl;
 
     web.getPathResource = resourcePath;
-    web.hostMessageReturn = ipAddress;
+    web.hostMessageReturn = ipAddress+":"+port;
 
     return (true);
 }

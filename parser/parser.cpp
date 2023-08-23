@@ -51,6 +51,8 @@ Server Parser::parserFile(std::string inputFilePath) {
     std::map<std::string, std::map<std::string, std::string> > locationMap;
     std::string ipFromServer;
     std::string locationPath;
+    std::string ip;
+    std::string port;
     Server serverInstance;
 
     int errorPageCount = 0;
@@ -70,9 +72,11 @@ Server Parser::parserFile(std::string inputFilePath) {
             if (insideServerBlock) { //isso pode estar em outra função.
 
                 if (line.find("listen") != std::string::npos){
-                    ipFromServer = "Server " + getIpFromInputFile(line);
-                    serverMap[ipFromServer]["ip"] =  getIpFromInputFile(line);
-                    serverMap[ipFromServer]["port"] = getPortFromInputFile(line);
+                    ip = getIpFromInputFile(line);
+                    port = getPortFromInputFile(line);
+                    ipFromServer = "Server " + ip+":"+port;
+                    serverMap[ipFromServer]["ip"] =  ip;
+                    serverMap[ipFromServer]["port"] = port;
                 }
                 else if (line.find("server_name") != std::string::npos)
                     serverMap[ipFromServer]["server_name"] =  getValuesFromArchvie(line);
