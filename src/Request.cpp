@@ -1,5 +1,11 @@
 #include "Request.hpp"
 
+std::string Request::itoa(int num) {
+	std::ostringstream oss;
+	oss << num;
+	return oss.str();
+}
+
 bool  Request::checkGetRequest( Server &web, const std::string& message, std::string method)
 {
     //Encontra alinha inicial e final
@@ -77,6 +83,42 @@ bool  Request::checkGetRequest( Server &web, const std::string& message, std::st
     return (true);
 }
 
+std::string  createResponseMessageError(std::string body){
+    std::string body_size = Request::itoa(body.size() + 1);
+    std::string response = "HTTP/1.1 404 Not Found\r\n"
+                            "Content-Type: text/html\r\n"
+                            "Content-Length: " + body_size + "\r\n"
+                            "\r\n"
+                            + body + "\n";
+    return(response);
+}
+
+std::string createErrorMessage(Server &web){
+    std::string file = web.locationRoot + "/" + web.getItemFromServerMap(web, "Server " + web.hostMessageReturn, "error_page 404");
+    std::ifstream filetoOpen(file.c_str());
+    std::string content;
+
+    if (filetoOpen.is_open()){
+        std::string line;
+        while(std::getline(filetoOpen, line)){
+            content += line;
+        }
+        filetoOpen.close();
+    }
+    else
+    {
+        std::string fileDefaultPath = "./utils/error_page/404.html";
+        std::ifstream filetoOpenDefault(fileDefaultPath.c_str());
+        if (filetoOpenDefault.is_open()){
+            std::string line;
+            while(std::getline(filetoOpenDefault, line)){
+                content += line;
+            }
+            filetoOpenDefault.close();
+        }
+    }
+    return(content);
+}
 
 void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<int> clientSockets)
 {
@@ -95,13 +137,18 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
 
 		std::string pathGetRequestFile = web.getRequestPathFile();
 		std::string http_response = Response::responseRequest(web, pathGetRequestFile);
+        
 
 		if (http_response == "Error 404"){
-            std::string response = "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 14\r\n\r\n404 Not Found\n";
+            std::string body = createErrorMessage(web);
+            std::string response = createResponseMessageError(body);
              send(client_sock, response.c_str(), response.length(), 0);
         }
         else
             send(client_sock, http_response.c_str(), http_response.length(), 0);
+        web.pathSegments.clear();
+        web.locationPath.clear();
+        web.locationRoot.clear();
 	}
 	else if (bytesRead == 0)
 	{

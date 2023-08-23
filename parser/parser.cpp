@@ -39,6 +39,38 @@ std::string getIpFromInputFile(std::string input){
     return(ip);
 }
 
+std::string getErrorNumber(const std::string& stringComplete){
+    std::size_t pos = stringComplete.find("error_page ");
+    std::string value = "";
+     if (pos != std::string::npos) {
+        pos += sizeof("error_page");
+        value = stringComplete.substr(pos);
+     }
+
+    std::size_t pos2 = value.find(" ") ;
+    if (pos2 != std::string::npos) {
+        //pos2 += 1;
+        value = value.substr(0, pos2);
+     }
+    return value;
+}
+
+std::string getErrorPageValues(const std::string& stringComplete, std::string error){
+    std::size_t pos = stringComplete.find(error);
+    std::string value = "";
+     if (pos != std::string::npos) {
+        pos += error.length() + 1;
+        value = stringComplete.substr(pos);
+     }
+    std::size_t pos2 = value.find(" ") ;
+    if (pos2 != std::string::npos) {
+        pos2 += 1;
+        value = value.substr(pos2);
+     }
+    return value;
+}
+
+
 std::string getValuesFromArchvie(const std::string& stringComplete){
     std::string value = stringComplete.substr(stringComplete.find(" ") + 1);
     value = value.substr(0, value.length() - 1);
@@ -89,7 +121,7 @@ Server Parser::parserFile(std::string inputFilePath) {
                     std::stringstream ss;
                     ss << errorPageCount;
                     std::string stringValue = ss.str();
-                    serverMap[ipFromServer]["error_page "+stringValue] =  getValuesFromArchvie(line);
+                    serverMap[ipFromServer]["error_page "+getErrorNumber(line)] =  getErrorPageValues(line, "error_page");
                 }
                 else if (line.find("timeout") != std::string::npos)
                     serverMap[ipFromServer]["timeout"] =  getValuesFromArchvie(line);

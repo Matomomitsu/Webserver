@@ -94,17 +94,11 @@ std::string  Response::getResponseFile(std::string responseRequestFilePath, Serv
                 }
             }
         }
-        web.pathSegments.clear();
-        web.locationPath.clear();
-        web.locationRoot.clear();
         closedir(directory);
         std::vector<std::string>().swap(web.pathSegments);
         return("Error 404");
     }
     response = createResponseMessage(content);
-    web.pathSegments.clear();
-    web.locationPath.clear();
-    web.locationRoot.clear();
     closedir(directory);
     std::vector<std::string>().swap(web.pathSegments);
     return (response);
