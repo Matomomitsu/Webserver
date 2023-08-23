@@ -6,7 +6,7 @@
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/08 16:05:51 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/08/23 13:54:14 by mtomomit         ###   ########.fr       */
+/*   Updated: 2023/08/23 15:36:27 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,3 +53,5 @@ class Sockets {
 	private:
 		void	handleError(std::string functionName, int epollFd, addrinfo *servinfo);
 };
+
+#endif
