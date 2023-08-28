@@ -26,6 +26,7 @@ class Request {
 		static bool  checkGetRequest( Server &web, const std::string& message, std::string method);
 		static void handleClient(Server web, int client_sock, Epoll *epoll, std::list<int> clientSockets);
 		static std::string itoa(int num);
+		static std::string createErrorMessage(Server &web);
 	private:
 
 };

@@ -1,6 +1,8 @@
 #ifndef RESPONSE_HPP
 # define RESPONSE_HPP
 
+# include <cstring>
+# include <cstdlib>
 # include <iostream>
 # include <vector>
 # include <fcntl.h>
@@ -17,6 +19,7 @@
 # include <string>
 # include <dirent.h>
 # include "Server.hpp"
+# include "Request.hpp"
 
 class Response {
 	public:
@@ -27,6 +30,8 @@ class Response {
 		static std::string  responseRequest(Server &web, std::string RequestPathResource);
 		static void addIndex(Server &web, std::string &path);
 		static std::string  createResponseMessage(std::string body);
+		std::string deleteResponse(Server &web, std::string pathToDelete);
+		static std::string  createResponseMessageWithError(std::string errorNumber, std::string messageError);
 	private:
 
 };

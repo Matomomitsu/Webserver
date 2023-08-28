@@ -162,3 +162,60 @@ std::string  Response::createResponseMessage(std::string body){
                             + body + "\n";
     return(response);
 }
+
+std::string  Response::createResponseMessageWithError(std::string errorNumber, std::string messageError){
+
+    std::string response = "HTTP/1.1 " + errorNumber + messageError +"\r\n"
+                            "Content-Type: text/html\r\n"
+                            "Content-Length: \r\n"
+                            "\r\n"
+                            +"\n";
+    return(messageError);
+}
+
+std::string  getResponseFileDefault(std::string responseFileDefault){
+    std::ifstream file(responseFileDefault.c_str());
+    std::string content;
+    std::string response;
+    DIR* directory = opendir(responseFileDefault.c_str());
+
+    if (file.is_open() && !directory){
+        std::string line;
+        while(std::getline(file, line)){
+            content += line;
+        }
+        file.close();
+    }
+    else
+        return("Error 404");
+    return (response);
+}
+
+std::string Response::deleteResponse(Server &web, std::string pathToDelete){
+
+    std::string rootPath = findLocationRoot(web, pathToDelete);
+    rootPath = "."+rootPath;
+    const char* filename = rootPath.c_str();
+    std::string response;
+
+    std::cout << filename<< std::endl;
+    if (access(filename, F_OK) != -1){
+        std::cout << "Arquivo no caminho " << rootPath << " Localizado." << std::endl;
+        if (std::remove(filename) == 0) {
+            std::cout << "Arquivo no caminho " << rootPath << " deletado." << std::endl;
+            std::string body = getResponseFileDefault("./utils/deleteSucces.html");
+            response = Response::createResponseMessage(body);
+            return(response);
+        } else {
+            response = "Error 403";
+            return(response);
+        }
+    }
+    else
+    {
+        std::cout << "O arquivo não existe." << std::endl;
+        response = "Error 404";
+        std::cout << response << std::endl;
+    }
+    return(response);
+}

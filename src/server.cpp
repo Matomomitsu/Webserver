@@ -17,8 +17,9 @@ bool  Server::checkType(const std::string& requestMessage)
     else if (requestMessage.substr(0, 4) == "POST")
         isTypeCorrect = Request::checkGetRequest(*this ,requestMessage, "POST");
 
-    else if (requestMessage.substr(0, 6) == "DELETE")
+    else if (requestMessage.substr(0, 6) == "DELETE"){
         isTypeCorrect = Request::checkGetRequest(*this ,requestMessage, "DELETE");
+    }
 
     return(isTypeCorrect);
 

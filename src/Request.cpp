@@ -83,7 +83,7 @@ bool  Request::checkGetRequest( Server &web, const std::string& message, std::st
     return (true);
 }
 
-std::string  createResponseMessageError(std::string body){
+std::string createResponseMessageError(std::string body){
     std::string body_size = Request::itoa(body.size() + 1);
     std::string response = "HTTP/1.1 404 Not Found\r\n"
                             "Content-Type: text/html\r\n"
@@ -93,7 +93,7 @@ std::string  createResponseMessageError(std::string body){
     return(response);
 }
 
-std::string createErrorMessage(Server &web){
+std::string Request::createErrorMessage(Server &web){
     std::string file = web.locationRoot + "/" + web.getItemFromServerMap(web, "Server " + web.hostMessageReturn, "error_page 404");
     std::ifstream filetoOpen(file.c_str());
     std::string content;
@@ -122,9 +122,16 @@ std::string createErrorMessage(Server &web){
 
 void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<int> clientSockets)
 {
+    Response responsed;
+    std::string http_response;
+    std::string pathGetRequestFile;
+    std::string response;
+    bool deleteRequest = false;
 	char buffer[1024];
 	int bytesRead = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
 	buffer[bytesRead] = 0;
+
+
 	if (bytesRead > 0)
 	{
 		std::string message(buffer, bytesRead);
@@ -134,14 +141,31 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
 			printf("message in format\n");
         //else
             //fazer exceção
+        if (message.substr(0, 6) == "DELETE"){
+            http_response = responsed.deleteResponse(web, web.getPathResource);
+            deleteRequest = true;
+            if (http_response == "Error 404"){;
+                response = Response::createResponseMessageWithError("Error 404", "Not Found");
+                deleteRequest = false;
+            }
+            else if (http_response == "Error 403"){;
+                response = Response::createResponseMessageWithError("Error 403", "Forbidden");
+                 std::string body = Request::createErrorMessage(web);
+                response = createResponseMessageError(body);
+                deleteRequest = false;
+            }
+            else
+                http_response = Response::createResponseMessage(http_response); 
+        }
+        else
+        {
+		    pathGetRequestFile = web.getRequestPathFile();
+		    http_response = Response::responseRequest(web, pathGetRequestFile);
+        }
 
-		std::string pathGetRequestFile = web.getRequestPathFile();
-		std::string http_response = Response::responseRequest(web, pathGetRequestFile);
-
-
-		if (http_response == "Error 404"){
-            std::string body = createErrorMessage(web);
-            std::string response = createResponseMessageError(body);
+		if (http_response == "Error 404" && !deleteRequest){
+            std::string body = Request::createErrorMessage(web);
+            response = createResponseMessageError(body);
              send(client_sock, response.c_str(), response.length(), 0);
         }
         else
