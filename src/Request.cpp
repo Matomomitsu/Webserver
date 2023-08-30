@@ -1,4 +1,5 @@
 #include "Request.hpp"
+#include "Post.hpp"
 
 std::string Request::itoa(int num) {
 	std::ostringstream oss;
@@ -126,22 +127,29 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
     std::string http_response;
     std::string pathGetRequestFile;
     std::string response;
+    std::string header = "";
     bool deleteRequest = false;
-	char buffer[1024];
+	char buffer[2];
 	int bytesRead = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
 	buffer[bytesRead] = 0;
 
 
 	if (bytesRead > 0)
 	{
-		std::string message(buffer, bytesRead);
-		std::cout << "Received message from client: " << message;
+        header += buffer;
+        while (header.find("\r\n\r\n") == std::string::npos && bytesRead != -1)
+        {
+            bytesRead = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
+            buffer[bytesRead] = 0;
+            header += buffer;
+        }
+		std::cout << "Received message from client: " << header;
 
-		if (web.checkType(message)) // Parte de validação da mensagem
+		if (web.checkType(header)) // Parte de validação da mensagem
 			printf("message in format\n");
         //else
             //fazer exceção
-        if (message.substr(0, 6) == "DELETE"){
+        if (header.substr(0, 6) == "DELETE"){
             http_response = responsed.deleteResponse(web, web.getPathResource);
             deleteRequest = true;
             if (http_response == "Error 404"){;
@@ -155,14 +163,22 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
                 deleteRequest = false;
             }
             else
-                http_response = Response::createResponseMessage(http_response); 
+                http_response = Response::createResponseMessage(http_response);
         }
-        else
+        else if (header.substr(0, 3) == "GET")
         {
 		    pathGetRequestFile = web.getRequestPathFile();
 		    http_response = Response::responseRequest(web, pathGetRequestFile);
         }
-
+        else if (header.substr(0, 4) == "POST")
+        {
+            Post    post;
+            post.clientSock = client_sock;
+            pathGetRequestFile = web.getRequestPathFile();
+            http_response = post.postResponse(web, pathGetRequestFile, header);
+            if (http_response == "Error 404")
+                response = Response::createResponseMessageWithError("Error 404", "Not Found");
+        }
 		if (http_response == "Error 404" && !deleteRequest){
             std::string body = Request::createErrorMessage(web);
             response = createResponseMessageError(body);
@@ -173,6 +189,9 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
         web.pathSegments.clear();
         web.locationPath.clear();
         web.locationRoot.clear();
+        char maxbuffer[5];
+        while (bytesRead != -1)
+            bytesRead = recv(client_sock, maxbuffer, sizeof(maxbuffer) - 1, 0);
 	}
 	else if (bytesRead == 0)
 	{

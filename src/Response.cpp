@@ -28,7 +28,6 @@ std::string Response::checkLocationRoot(const std::vector<std::string>& webPathS
         }
         currentPath += "/";
     }
-
     return (matchingLocationPath);
 }
 
@@ -58,7 +57,10 @@ std::string  Response::findLocationRoot(Server &web, std::string RequestPathReso
                         web.locationRoot = serverIt->second["root"];
                 }
             }
-            RequestPathResource = web.locationRoot + RequestPathResource.substr(web.locationPath.length(), RequestPathResource.length() - web.locationPath.length());
+            if (web.locationPath != "/")
+                RequestPathResource = web.locationRoot + RequestPathResource.substr(web.locationPath.length(), RequestPathResource.length() - web.locationPath.length());
+            else
+                RequestPathResource = web.locationRoot + RequestPathResource.substr(0, RequestPathResource.length());
         }
     }
     return(RequestPathResource);
@@ -194,11 +196,9 @@ std::string  getResponseFileDefault(std::string responseFileDefault){
 std::string Response::deleteResponse(Server &web, std::string pathToDelete){
 
     std::string rootPath = findLocationRoot(web, pathToDelete);
-    rootPath = "."+rootPath;
     const char* filename = rootPath.c_str();
     std::string response;
 
-    std::cout << filename<< std::endl;
     if (access(filename, F_OK) != -1){
         std::cout << "Arquivo no caminho " << rootPath << " Localizado." << std::endl;
         if (std::remove(filename) == 0) {
