@@ -48,8 +48,10 @@ std::string  Response::findLocationRoot(Server &web, std::string RequestPathReso
 
     for (outerIt = web.locationMap.begin(); outerIt != web.locationMap.end(); ++outerIt){
         if (outerIt->first == "Server " + web.hostMessageReturn){
-            web.pathSegments = splitPath(RequestPathResource, '/');
-            web.locationRoot = checkLocationRoot(web.pathSegments, outerIt->second, web);
+            if (web.pathSegments.empty())
+                web.pathSegments = splitPath(RequestPathResource, '/');
+            if (web.locationRoot.empty())
+                web.locationRoot = checkLocationRoot(web.pathSegments, outerIt->second, web);
             if (web.locationRoot.empty()){
                 std::map<std::string, std::map<std::string, std::string> >::iterator serverIt;
                 for (serverIt = web.serverMap.begin(); serverIt != web.serverMap.end(); ++serverIt){

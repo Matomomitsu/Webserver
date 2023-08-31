@@ -10,14 +10,8 @@ server {
 	timeout 50;
 	cgi .php php-cgi;
 	cgi .py python3;
-	location / {
-		limit_except GET;
-		client_max_body_size 100;
-		client_max_body_size 100;
-		root ./pute;
-	}
 	location /put {
-		limit_except PUT;
+		limit_except POST DELETE;
 		index index.html index.php;
 		root ./pute;
 	}
@@ -30,7 +24,7 @@ server {
 
 
 server {
-	listen 127.0.0.251:3490;
+	listen 127.0.0.1:3490;
 	server_name www.localhost.com localhost.com;
 	root .;
 	index index.html index.php;
@@ -41,7 +35,7 @@ server {
 	cgi .py python3;
 	location / {dasdasd
 		limit_except GET;dasdasd
-		client_max_body_size 100;
+		client_max_body_size 10000;
 	}
 	location /put {
 		limit_except PUT;

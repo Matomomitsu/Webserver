@@ -6,7 +6,7 @@
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/25 20:02:59 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/08/30 20:22:58 by mtomomit         ###   ########.fr       */
+/*   Updated: 2023/08/31 15:03:32 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,7 @@ class Post {
 		int			clientSock;
 		std::string	postResponse(Server &web, std::string RequestPathResource, std::string header);
 		void		getContentTypeData(std::string header);
-		void		getLength(std::string header);
+		void		getLength(std::string header, Server &web);
 		void		handleBoundary(std::string fullRequestPathResource);
 		void		getBoundaryHeaderData(std::string &body, std::size_t &bytesReadTotal, std::string &fullRequestPathResource);
 		void		copyToFile(std::string &fullRequestPathResource, std::size_t limiter, std::string &body);
@@ -65,6 +65,11 @@ class Post {
 		};
 
 		class	LengthRequired : public std::exception{
+			public:
+				virtual const char *what() const throw();
+		};
+
+		class	RequestEntityTooLarge : public std::exception{
 			public:
 				virtual const char *what() const throw();
 		};

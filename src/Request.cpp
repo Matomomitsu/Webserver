@@ -80,6 +80,7 @@ bool  Request::checkGetRequest( Server &web, const std::string& message, std::st
 
     web.getPathResource = resourcePath;
     web.hostMessageReturn = ipAddress+":"+port;
+    Response::findLocationRoot(web, resourcePath);
 
     return (true);
 }
@@ -128,6 +129,7 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
     std::string pathGetRequestFile;
     std::string response;
     std::string header = "";
+    std::string limitExcept;
     bool deleteRequest = false;
 	char buffer[2];
 	int bytesRead = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
@@ -149,7 +151,13 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
 			printf("message in format\n");
         //else
             //fazer exceção
-        if (header.substr(0, 6) == "DELETE"){
+        if (web.locationPath.empty())
+            limitExcept = web.getItemFromServerMap(web, "Server " + web.hostMessageReturn, "limit_except");
+        else
+            limitExcept = web.getItemFromLocationMap(web, "Server " + web.hostMessageReturn, "limit_except " + web.locationPath);
+        if (limitExcept == "wrong")
+            limitExcept = "POST DELETE GET";
+        if (header.substr(0, 6) == "DELETE" && (limitExcept.find("DELETE") != std::string::npos)){
             http_response = responsed.deleteResponse(web, web.getPathResource);
             deleteRequest = true;
             if (http_response == "Error 404"){;
@@ -165,12 +173,12 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
             else
                 http_response = Response::createResponseMessage(http_response);
         }
-        else if (header.substr(0, 3) == "GET")
+        else if (header.substr(0, 3) == "GET" && (limitExcept.find("GET") != std::string::npos))
         {
 		    pathGetRequestFile = web.getRequestPathFile();
 		    http_response = Response::responseRequest(web, pathGetRequestFile);
         }
-        else if (header.substr(0, 4) == "POST")
+        else if (header.substr(0, 4) == "POST" && (limitExcept.find("POST") != std::string::npos))
         {
             Post    post;
             post.clientSock = client_sock;
@@ -179,6 +187,8 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
             if (http_response == "Error 404")
                 response = Response::createResponseMessageWithError("Error 404", "Not Found");
         }
+        if (http_response.empty())
+            http_response = "Error 404"; // Trocar para 405
 		if (http_response == "Error 404" && !deleteRequest){
             std::string body = Request::createErrorMessage(web);
             response = createResponseMessageError(body);

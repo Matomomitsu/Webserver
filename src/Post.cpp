@@ -6,7 +6,7 @@
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/25 20:02:57 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/08/30 20:23:52 by mtomomit         ###   ########.fr       */
+/*   Updated: 2023/08/31 15:53:12 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,10 +39,11 @@ void Post::getContentTypeData(std::string header)
         throw NotFound(); // Trocar para 415 Usupported Media Type
 }
 
-void Post::getLength(std::string header)
+void Post::getLength(std::string header, Server &web)
 {
     std::size_t findLength;
     std::string stringLength;
+    std::string clientMaxBodySize;
 
     findLength = header.find("Content-Length: ");
     if (findLength != std::string::npos)
@@ -51,7 +52,16 @@ void Post::getLength(std::string header)
         throw NotFound(); // Trocar para 411 Length Required
     stringLength = stringLength.substr(0, stringLength.find("\r\n"));
     stringLength = stringLength.substr(16);
-    contentLength = atoi(stringLength.c_str());
+    contentLength = atol(stringLength.c_str());
+    if (web.locationPath.empty())
+        clientMaxBodySize = web.getItemFromServerMap(web, "Server " + web.hostMessageReturn, "client_max_body_size");
+    else
+        clientMaxBodySize = web.getItemFromLocationMap(web, "Server " + web.hostMessageReturn, "client_max_body_size " + web.locationPath);
+    if (clientMaxBodySize != "wrong")
+    {
+        if (contentLength > static_cast<long unsigned int>(atol(clientMaxBodySize.c_str())))
+            throw NotFound(); // Trocar para 413 Request Entity Too Large
+    }
 }
 
 void Post::getBoundaryHeaderData(std::string &body, std::size_t &bytesReadTotal, std::string &fullRequestPathResource)
@@ -113,7 +123,7 @@ void	Post::copyToFile(std::string &fullRequestPathResource, std::size_t limiter,
 
 void	Post::handleBoundary(std::string fullRequestPathResource)
 {
-    char buffer[1024];
+    char buffer[2048];
     std::string body = "";
     int bytesRead = recv(clientSock, buffer, sizeof(buffer) - 1, 0);
     size_t bytesReadTotal = bytesRead;
@@ -183,7 +193,7 @@ std::string Post::postResponse(Server &web, std::string RequestPathResource, std
         closedir(directory);
     try{
         this->getContentTypeData(header);
-        this->getLength(header);
+        this->getLength(header, web);
         this->handleBoundary(fullRequestPathResource);
     }
     catch(std::exception &e){
@@ -204,6 +214,10 @@ const char *Post::NotFound::what() const throw(){
 
 const char *Post::LengthRequired::what() const throw(){
 	return ("Error 411");
+}
+
+const char *Post::RequestEntityTooLarge::what() const throw(){
+	return ("Error 413");
 }
 
 const char *Post::UnsupportedMediaType::what() const throw(){

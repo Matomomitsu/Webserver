@@ -112,10 +112,14 @@ Server Parser::parserFile(std::string inputFilePath) {
                 }
                 else if (line.find("server_name") != std::string::npos)
                     serverMap[ipFromServer]["server_name"] =  getValuesFromArchvie(line);
-                else if (line.find("root") != std::string::npos && serverMap[ipFromServer]["root"] == "")
+                else if (line.find("root") != std::string::npos && !insideLocationBlock)
                     serverMap[ipFromServer]["root"] =  getValuesFromArchvie(line);
-                else if (line.find("index") != std::string::npos && serverMap[ipFromServer]["index"] == "")
+                else if (line.find("index") != std::string::npos && !insideLocationBlock)
                     serverMap[ipFromServer]["index"] =  getValuesFromArchvie(line);
+                else if (line.find("client_max_body_size") != std::string::npos && !insideLocationBlock)
+                    serverMap[ipFromServer]["client_max_body_size"] =  getValuesFromArchvie(line);
+                else if (line.find("limit_except") != std::string::npos && !insideLocationBlock)
+                    serverMap[ipFromServer]["limit_except"] =  getValuesFromArchvie(line);
                 else if (line.find("error_page") != std::string::npos){
                     errorPageCount++;
                     std::stringstream ss;
@@ -149,6 +153,8 @@ Server Parser::parserFile(std::string inputFilePath) {
                     }
                     else if (line.find("limit_except") != std::string::npos)
                         locationMap[ipFromServer]["limit_except "+locationPath] =  getValuesFromArchvie(line);
+                    else if (line.find("client_max_body_size") != std::string::npos)
+                        locationMap[ipFromServer]["client_max_body_size "+locationPath] =  getValuesFromArchvie(line);
                     else if (line.find("root") != std::string::npos)
                         locationMap[ipFromServer]["root "+locationPath] =  getValuesFromArchvie(line);
                     else if (line.find("index") != std::string::npos)

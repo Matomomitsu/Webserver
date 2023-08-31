@@ -44,7 +44,7 @@ int main (int argc, char *argv[]){
     sigaction(SIGINT, &sigIntHandler, NULL);
 
     web = parser.parserFile(filePath.c_str());
-//    run(web);
+    //run(web);
 	try{
 		sockets.createSockets(web, &epoll.event, epoll.epoll_fd);
 	}
