@@ -6,7 +6,7 @@
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/25 20:02:59 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/08/31 15:03:32 by mtomomit         ###   ########.fr       */
+/*   Updated: 2023/09/01 16:56:47 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,11 +42,14 @@ class Post {
 		std::ofstream currentFile;
 		int			clientSock;
 		std::string	postResponse(Server &web, std::string RequestPathResource, std::string header);
-		void		getContentTypeData(std::string header);
+		void		getContentTypeData(std::string &header);
 		void		getLength(std::string header, Server &web);
 		void		handleBoundary(std::string fullRequestPathResource);
 		void		getBoundaryHeaderData(std::string &body, std::size_t &bytesReadTotal, std::string &fullRequestPathResource);
-		void		copyToFile(std::string &fullRequestPathResource, std::size_t limiter, std::string &body);
+		void		handleBinary(const std::string &fullRequestPathResource);
+		void		getBinaryContentDisposition(std::string &fullRequestPathResource, std::string &header);
+		void		copyToFile(const std::string &fullRequestPathResource, std::size_t limiter, std::string &body);
+		void		copyToBinaryFile(const std::string &fullRequestPathResource, std::size_t limiter, std::string &body);
 		std::string	createResponseMessage(std::string &fullRequestPathResource);
 
 		class	BadRequest : public std::exception{

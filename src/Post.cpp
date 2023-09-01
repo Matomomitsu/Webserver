@@ -6,13 +6,13 @@
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/25 20:02:57 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/08/31 15:53:12 by mtomomit         ###   ########.fr       */
+/*   Updated: 2023/09/01 17:06:16 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Post.hpp"
 
-void Post::getContentTypeData(std::string header)
+void Post::getContentTypeData(std::string &header)
 {
     std::size_t findContent;
     std::size_t findBoundary;
@@ -35,7 +35,7 @@ void Post::getContentTypeData(std::string header)
     }
     if (contentType == "multipart/form-data" && mainBoundary == "")
         throw NotFound(); // Trocar para 400 Bad Request
-    if ((contentType != "multipart/form-data" && contentType == "application/octet-stream"))
+    if ((contentType != "multipart/form-data" && contentType != "application/octet-stream"))
         throw NotFound(); // Trocar para 415 Usupported Media Type
 }
 
@@ -103,7 +103,7 @@ void Post::getBoundaryHeaderData(std::string &body, std::size_t &bytesReadTotal,
     body = body.substr(headerEnd + 4);
 }
 
-void	Post::copyToFile(std::string &fullRequestPathResource, std::size_t limiter, std::string &body)
+void	Post::copyToFile(const std::string &fullRequestPathResource, std::size_t limiter, std::string &body)
 {
     if (filename != ""){
         std::ofstream file((fullRequestPathResource + filename).c_str(), std::ios_base::app);
@@ -117,7 +117,25 @@ void	Post::copyToFile(std::string &fullRequestPathResource, std::size_t limiter,
         if (file.is_open()){
             file << body.substr(0, limiter);
             file.close();
+        }
     }
+}
+
+void	Post::copyToBinaryFile(const std::string &fullRequestPathResource, std::size_t limiter, std::string &body)
+{
+    if (filename != ""){
+        std::ofstream file((fullRequestPathResource + filename).c_str(), std::ios::out | std::ios::binary | std::ios_base::app);
+        if (file.is_open()){
+            file.write(body.c_str(), limiter);
+            file.close();
+        }
+    }
+    else{
+        std::ofstream file((fullRequestPathResource + "binaryFile").c_str(), std::ios::out | std::ios::binary | std::ios_base::app);
+        if (file.is_open()){
+            file.write(body.c_str(), limiter);
+            file.close();
+        }
     }
 }
 
@@ -171,6 +189,54 @@ void	Post::handleBoundary(std::string fullRequestPathResource)
     }
 }
 
+void	Post::getBinaryContentDisposition(std::string &fullRequestPathResource, std::string &header)
+{
+    std::size_t findFilename;
+    std::size_t findContentDispostion;
+
+    findContentDispostion = header.find("Content-Disposition: ");
+    if (findContentDispostion != std::string::npos)
+    {
+        contentDisposition = header.substr(0, header.find("Content-Disposition: "));
+        contentDisposition = contentDisposition.substr(0, contentDisposition.find("\r\n"));
+        findFilename = contentDisposition.find("filename=");
+    }
+    else
+        findFilename = findContentDispostion;
+    if (findFilename != std::string::npos)
+    {
+        filename = contentDisposition.substr(findFilename + 10);
+        filename = filename.substr(0, filename.find("\""));
+        std::ofstream file((fullRequestPathResource + filename).c_str(), std::ios::out | std::ios::binary);
+        file.close();
+    }
+    else
+    {
+        std::ofstream file((fullRequestPathResource + filename).c_str(), std::ios::out | std::ios::binary);
+        file.close();
+        filename = "";
+    }
+}
+
+void	Post::handleBinary(const std::string &fullRequestPathResource)
+{
+    char buffer[2048];
+    std::string body = "";
+    int bytesRead = 0;
+    size_t bytesReadTotal = 0;
+
+    while (bytesReadTotal != contentLength){
+        bytesRead = recv(clientSock, buffer, sizeof(buffer) - 1, 0);
+        if (bytesRead != -1)
+        {
+            bytesReadTotal += bytesRead;
+            body.insert(body.end(), buffer, buffer + bytesRead);
+            copyToBinaryFile(fullRequestPathResource, body.size(), body);
+            body.clear();
+        }
+    }
+}
+
 std::string  Post::createResponseMessage(std::string &fullRequestPathResource){
     std::string response = "HTTP/1.1 201 Created\r\n"
                             "Content-Type: text/plain\r\n"
@@ -194,7 +260,13 @@ std::string Post::postResponse(Server &web, std::string RequestPathResource, std
     try{
         this->getContentTypeData(header);
         this->getLength(header, web);
-        this->handleBoundary(fullRequestPathResource);
+        if (this->contentType == "multipart/form-data")
+            this->handleBoundary(fullRequestPathResource);
+        if (this->contentType == "application/octet-stream")
+        {
+            this->getBinaryContentDisposition(fullRequestPathResource, header);
+            this->handleBinary(fullRequestPathResource);
+        }
     }
     catch(std::exception &e){
         return (e.what());
