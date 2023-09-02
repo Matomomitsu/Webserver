@@ -1,4 +1,4 @@
-oid Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<int> clientSockets)
+void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<int> clientSockets)
 {
     Response responsed;
     std::string http_response;

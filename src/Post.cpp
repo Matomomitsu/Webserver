@@ -6,7 +6,7 @@
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/25 20:02:57 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/09/01 17:06:16 by mtomomit         ###   ########.fr       */
+/*   Updated: 2023/09/02 02:17:28 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,7 @@ void Post::getContentTypeData(std::string &header)
     if (findContent != std::string::npos)
         contentType = header.substr(findContent);
     else
-        throw NotFound(); // Trocar para 415 Usupported Media Type
+        throw UnsupportedMediaType();
     contentType = contentType.substr(0, contentType.find("\r\n"));
     findBoundary = contentType.find("boundary=");
     if (findBoundary != std::string::npos){
@@ -34,9 +34,9 @@ void Post::getContentTypeData(std::string &header)
         contentType = contentType.substr(14);
     }
     if (contentType == "multipart/form-data" && mainBoundary == "")
-        throw NotFound(); // Trocar para 400 Bad Request
+        throw BadRequest();
     if ((contentType != "multipart/form-data" && contentType != "application/octet-stream"))
-        throw NotFound(); // Trocar para 415 Usupported Media Type
+        throw UnsupportedMediaType();
 }
 
 void Post::getLength(std::string header, Server &web)
@@ -49,7 +49,7 @@ void Post::getLength(std::string header, Server &web)
     if (findLength != std::string::npos)
         stringLength = header.substr(findLength);
     else
-        throw NotFound(); // Trocar para 411 Length Required
+        throw LengthRequired();
     stringLength = stringLength.substr(0, stringLength.find("\r\n"));
     stringLength = stringLength.substr(16);
     contentLength = atol(stringLength.c_str());
@@ -60,7 +60,7 @@ void Post::getLength(std::string header, Server &web)
     if (clientMaxBodySize != "wrong")
     {
         if (contentLength > static_cast<long unsigned int>(atol(clientMaxBodySize.c_str())))
-            throw NotFound(); // Trocar para 413 Request Entity Too Large
+            throw RequestEntityTooLarge();
     }
 }
 
@@ -84,7 +84,7 @@ void Post::getBoundaryHeaderData(std::string &body, std::size_t &bytesReadTotal,
     }
     findContentDisposition = body.find("Content-Disposition: ");
     if (findContentDisposition == std::string::npos)
-        throw NotFound(); // Trocar para 400 Bad Request
+        throw BadRequest();
     contentDisposition = body.substr(findContentDisposition);
     contentDisposition = contentDisposition.substr(0, contentDisposition.find("\r\n"));
     findFilename = contentDisposition.find("filename=");
@@ -151,7 +151,7 @@ void	Post::handleBoundary(std::string fullRequestPathResource)
     buffer[bytesRead] = 0;
     body = buffer;
     if (body.substr(0, mainBoundary.size() + 2) != ( "--" + mainBoundary) )
-        throw NotFound(); // Trocar para 400 Bad Request
+        throw BadRequest();
     while (bytesReadTotal != contentLength || body != ""){
         body = bodyEnd + body;
         bodyEnd = "";
@@ -254,7 +254,7 @@ std::string Post::postResponse(Server &web, std::string RequestPathResource, std
     fullRequestPathResource = Response::findLocationRoot(web, RequestPathResource) + "/";
     DIR* directory = opendir(fullRequestPathResource.c_str());
     if (!directory)
-        return ("Error 404"); // Trocar para 400 Bad Request
+        return ("Error 400");
     else
         closedir(directory);
     try{

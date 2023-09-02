@@ -263,14 +263,24 @@ std::string Response::errorType(std::string erro){
         content = Response::createResponseMessageWithError(body, "403", "Forbidden");
         return (content);
     }
+    else if(erro == "Error 400"){
+        body = getErrorReturn("./utils/error_page/400.html");
+        content = Response::createResponseMessageWithError(body, "400", "Bad Request");
+        return (content);
+    }
     else if(erro == "Error 411"){
         body = getErrorReturn("./utils/error_page/411.html");
-        content = Response::createResponseMessageWithError(body, "403", "LengthRequired");
+        content = Response::createResponseMessageWithError(body, "411", "Length Required");
+        return (content);
+    }
+    else if(erro == "Error 413"){
+        body = getErrorReturn("./utils/error_page/413.html");
+        content = Response::createResponseMessageWithError(body, "413", "Request Entity too Large");
         return (content);
     }
     else if(erro == "Error 415"){
         body = getErrorReturn("./utils/error_page/415.html");
-        content = Response::createResponseMessageWithError(body, "403", "UnsupportedMediaType");
+        content = Response::createResponseMessageWithError(body, "415", "Unsupported Media Type");
         return (content);
     }
     else{
