@@ -1,7 +1,7 @@
 NAME = webserver
 
 # Compilation
-CC = c++
+CC = g++
 
 # Compilation flags
 CFLAGS = -Wall -Wextra -Werror -Wshadow -std=c++98
@@ -9,14 +9,14 @@ CFLAGS = -Wall -Wextra -Werror -Wshadow -std=c++98
 RM = rm -rf
 
 SOURCES = main.cpp \
-	src/server.cpp \
-	parser/parser.cpp \
-	src/webserver.cpp \
-	src/Sockets.cpp \
-	src/Epoll.cpp \
-	src/Response.cpp \
-	src/Request.cpp \
-	src/Post.cpp
+    src/server.cpp \
+    parser/parser.cpp \
+    src/webserver.cpp \
+    src/Sockets.cpp \
+    src/Epoll.cpp \
+    src/Response.cpp \
+    src/Request.cpp \
+    src/Post.cpp
 
 SRCS_PATH = ./
 SRCS = $(addprefix $(SRCS_PATH), $(SOURCES))
@@ -24,14 +24,14 @@ SRCS = $(addprefix $(SRCS_PATH), $(SOURCES))
 OBJS_PATH = ./objs/
 OBJS = $(addprefix $(OBJS_PATH), $(SOURCES:.cpp=.o))
 
-HEADER = ./src/server.hpp \
-	./parser/parser.hpp \
-	./src/Webserver.hpp \
-	./src/Sockets.hpp \
-	./src/Epoll.hpp \
-	./src/Response.hpp \
-	./src/Request.hpp \
-	./src/Post.hpp
+HEADER = src/Server.hpp \
+    parser/Parser.hpp \
+    src/Webserver.hpp \
+    src/Sockets.hpp \
+    src/Epoll.hpp \
+    src/Response.hpp \
+    src/Request.hpp \
+    src/Post.hpp 
 
 all: $(NAME)
 

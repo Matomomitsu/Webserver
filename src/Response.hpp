@@ -31,7 +31,8 @@ class Response {
 		static void addIndex(Server &web, std::string &path);
 		static std::string  createResponseMessage(std::string body);
 		std::string deleteResponse(Server &web, std::string pathToDelete);
-		static std::string  createResponseMessageWithError(std::string errorNumber, std::string messageError);
+		static std::string createResponseMessageWithError(std::string body, std::string erro, std::string messageErro);
+		static std::string errorType(std::string erro);
 	private:
 
 };

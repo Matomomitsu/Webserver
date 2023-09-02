@@ -167,15 +167,16 @@ std::string  Response::createResponseMessage(std::string body){
     return(response);
 }
 
-std::string  Response::createResponseMessageWithError(std::string errorNumber, std::string messageError){
-
-    std::string response = "HTTP/1.1 " + errorNumber + messageError +"\r\n"
+std::string Response::createResponseMessageWithError(std::string body, std::string erro, std::string messageErro){
+    std::string body_size = Request::itoa(body.size() + 1);
+    std::string response = "HTTP/1.1 "+ erro +" "+messageErro+"\r\n"
                             "Content-Type: text/html\r\n"
-                            "Content-Length: \r\n"
+                            "Content-Length: " + body_size + "\r\n"
                             "\r\n"
-                            +"\n";
-    return(messageError);
+                            + body + "\n";
+    return(response);
 }
+
 
 std::string  getResponseFileDefault(std::string responseFileDefault){
     std::ifstream file(responseFileDefault.c_str());
@@ -196,7 +197,6 @@ std::string  getResponseFileDefault(std::string responseFileDefault){
 }
 
 std::string Response::deleteResponse(Server &web, std::string pathToDelete){
-
     std::string rootPath = findLocationRoot(web, pathToDelete);
     const char* filename = rootPath.c_str();
     std::string response;
@@ -220,4 +220,62 @@ std::string Response::deleteResponse(Server &web, std::string pathToDelete){
         std::cout << response << std::endl;
     }
     return(response);
+}
+
+std::string getErrorReturn(std::string path){
+    std::ifstream filetoOpen(path.c_str());
+    std::string content;
+
+    if (filetoOpen.is_open()){
+        std::string line;
+        while(std::getline(filetoOpen, line)){
+            content += line;
+        }
+        filetoOpen.close();
+    }
+    else
+    {
+        std::cout <<  "File Not Found, Please Check The path to default file of return" << std::endl;
+        std::string fileDefaultPath = "./utils/error_page/404.html";
+        std::ifstream filetoOpenDefault(fileDefaultPath.c_str());
+        if (filetoOpenDefault.is_open()){
+            std::string line;
+            while(std::getline(filetoOpenDefault, line)){
+                content += line;
+            }
+            filetoOpenDefault.close();
+        }
+    }
+    return(content);
+}
+
+std::string Response::errorType(std::string erro){
+    std::string body;
+    std::string content;
+
+    if (erro == "Error 404"){
+        body = getErrorReturn("./utils/error_page/404.html");
+        content = Response::createResponseMessageWithError(body, "404", "Not Found");
+        return (content);
+    }
+    else if(erro == "Error 403"){
+        body = getErrorReturn("./utils/error_page/403.html");
+        content = Response::createResponseMessageWithError(body, "403", "Forbidden");
+        return (content);
+    }
+    else if(erro == "Error 411"){
+        body = getErrorReturn("./utils/error_page/411.html");
+        content = Response::createResponseMessageWithError(body, "403", "LengthRequired");
+        return (content);
+    }
+    else if(erro == "Error 415"){
+        body = getErrorReturn("./utils/error_page/415.html");
+        content = Response::createResponseMessageWithError(body, "403", "UnsupportedMediaType");
+        return (content);
+    }
+    else{
+        content = "OK";
+        return (content);
+    }
+    return(content);
 }
