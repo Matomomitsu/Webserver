@@ -157,14 +157,12 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
             limitExcept = web.getItemFromLocationMap(web, "Server " + web.hostMessageReturn, "limit_except " + web.locationPath);
         if (limitExcept == "wrong")
             limitExcept = "POST DELETE GET";
- 
+
         if (header.substr(0, 6) == "DELETE" && (limitExcept.find("DELETE") != std::string::npos)){
             http_response = responsed.deleteResponse(web, web.getPathResource);
             checkResponse = Response::errorType(http_response);
             if(checkResponse != "OK")
                 http_response = Response::errorType(http_response);
-            else
-                http_response = Response::createResponseMessage(http_response);
         }
         else if (header.substr(0, 3) == "GET" && (limitExcept.find("GET") != std::string::npos))
         {
@@ -173,11 +171,10 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
             checkResponse = Response::errorType(http_response);
             if(checkResponse != "OK")
                 http_response = Response::errorType(http_response);
-            else
-                http_response = Response::createResponseMessage(http_response);
         }
         else if (header.substr(0, 4) == "POST" && (limitExcept.find("POST") != std::string::npos))
         {
+            std::cout << header << std::endl;
             Post    post;
             post.clientSock = client_sock;
             pathGetRequestFile = web.getRequestPathFile();
@@ -185,8 +182,6 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
             checkResponse = Response::errorType(http_response);
             if(checkResponse != "OK")
                 http_response = Response::errorType(http_response);
-            else
-                http_response = Response::createResponseMessage(http_response);
         }
         else{
             http_response = Response::errorType("Error 500");
@@ -195,9 +190,10 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
         web.pathSegments.clear();
         web.locationPath.clear();
         web.locationRoot.clear();
-        char maxbuffer[5];
-        while (bytesRead != -1)
+        char maxbuffer[128];
+        while (bytesRead != -1){
             bytesRead = recv(client_sock, maxbuffer, sizeof(maxbuffer) - 1, 0);
+        }
 	}
 	else if (bytesRead == 0)
 	{

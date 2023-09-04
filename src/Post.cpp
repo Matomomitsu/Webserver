@@ -6,7 +6,7 @@
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/25 20:02:57 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/09/02 02:17:28 by mtomomit         ###   ########.fr       */
+/*   Updated: 2023/09/04 19:02:22 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,8 +35,6 @@ void Post::getContentTypeData(std::string &header)
     }
     if (contentType == "multipart/form-data" && mainBoundary == "")
         throw BadRequest();
-    if ((contentType != "multipart/form-data" && contentType != "application/octet-stream"))
-        throw UnsupportedMediaType();
 }
 
 void Post::getLength(std::string header, Server &web)
@@ -92,36 +90,18 @@ void Post::getBoundaryHeaderData(std::string &body, std::size_t &bytesReadTotal,
     {
         filename = contentDisposition.substr(findFilename + 10);
         filename = filename.substr(0, filename.find("\""));
-        std::ofstream file((fullRequestPathResource + filename).c_str());
+        std::ofstream file((fullRequestPathResource + filename).c_str(), std::ios::out | std::ios::binary);
         file.close();
     }
     else{
         filename = "";
-        std::ofstream file((fullRequestPathResource + "file").c_str());
+        std::ofstream file((fullRequestPathResource + "file").c_str(), std::ios::out | std::ios::binary);
         file.close();
     }
     body = body.substr(headerEnd + 4);
 }
 
 void	Post::copyToFile(const std::string &fullRequestPathResource, std::size_t limiter, std::string &body)
-{
-    if (filename != ""){
-        std::ofstream file((fullRequestPathResource + filename).c_str(), std::ios_base::app);
-        if (file.is_open()){
-            file << body.substr(0, limiter);
-            file.close();
-        }
-    }
-    else{
-        std::ofstream file((fullRequestPathResource + "file").c_str(), std::ios_base::app);
-        if (file.is_open()){
-            file << body.substr(0, limiter);
-            file.close();
-        }
-    }
-}
-
-void	Post::copyToBinaryFile(const std::string &fullRequestPathResource, std::size_t limiter, std::string &body)
 {
     if (filename != ""){
         std::ofstream file((fullRequestPathResource + filename).c_str(), std::ios::out | std::ios::binary | std::ios_base::app);
@@ -131,7 +111,7 @@ void	Post::copyToBinaryFile(const std::string &fullRequestPathResource, std::siz
         }
     }
     else{
-        std::ofstream file((fullRequestPathResource + "binaryFile").c_str(), std::ios::out | std::ios::binary | std::ios_base::app);
+        std::ofstream file((fullRequestPathResource + "file").c_str(), std::ios::out | std::ios::binary | std::ios_base::app);
         if (file.is_open()){
             file.write(body.c_str(), limiter);
             file.close();
@@ -141,9 +121,12 @@ void	Post::copyToBinaryFile(const std::string &fullRequestPathResource, std::siz
 
 void	Post::handleBoundary(std::string fullRequestPathResource)
 {
-    char buffer[2048];
+    char buffer[1024];
     std::string body = "";
-    int bytesRead = recv(clientSock, buffer, sizeof(buffer) - 1, 0);
+    int bytesRead = 0;
+    bytesRead = recv(clientSock, buffer, sizeof(buffer) - 1, 0);
+    while (bytesRead == -1)
+        bytesRead = recv(clientSock, buffer, sizeof(buffer) - 1, 0);
     size_t bytesReadTotal = bytesRead;
     std::string bodyEnd = "";
     size_t  findBoundary;
@@ -169,10 +152,10 @@ void	Post::handleBoundary(std::string fullRequestPathResource)
         else
         {
             if (static_cast<long unsigned int>(bytesRead) > mainBoundary.size())
-                bodyEnd = body.substr(bytesRead - mainBoundary.size());
+                bodyEnd = body.substr(bytesRead - mainBoundary.size() - 2);
             else
                 bodyEnd = body;
-            this->copyToFile(fullRequestPathResource, bytesRead - bodyEnd.size(), body);
+            this->copyToFile(fullRequestPathResource, bytesRead - mainBoundary.size() - 2, body);
             bytesRead = recv(clientSock, buffer, sizeof(buffer) - 1, 0);
             if (bytesRead != -1)
             {
@@ -231,7 +214,7 @@ void	Post::handleBinary(const std::string &fullRequestPathResource)
         {
             bytesReadTotal += bytesRead;
             body.insert(body.end(), buffer, buffer + bytesRead);
-            copyToBinaryFile(fullRequestPathResource, body.size(), body);
+            copyToFile(fullRequestPathResource, body.size(), body);
             body.clear();
         }
     }
@@ -262,7 +245,7 @@ std::string Post::postResponse(Server &web, std::string RequestPathResource, std
         this->getLength(header, web);
         if (this->contentType == "multipart/form-data")
             this->handleBoundary(fullRequestPathResource);
-        if (this->contentType == "application/octet-stream")
+        else
         {
             this->getBinaryContentDisposition(fullRequestPathResource, header);
             this->handleBinary(fullRequestPathResource);
