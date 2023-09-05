@@ -174,7 +174,6 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
         }
         else if (header.substr(0, 4) == "POST" && (limitExcept.find("POST") != std::string::npos))
         {
-            std::cout << header << std::endl;
             Post    post;
             post.clientSock = client_sock;
             pathGetRequestFile = web.getRequestPathFile();

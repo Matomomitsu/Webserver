@@ -6,7 +6,7 @@
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/25 20:02:59 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/09/04 18:54:58 by mtomomit         ###   ########.fr       */
+/*   Updated: 2023/09/05 15:58:43 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,7 @@
 # include <string>
 # include <dirent.h>
 # include <cstdlib>
+#include <algorithm>
 # include "Server.hpp"
 # include "Response.hpp"
 
@@ -45,10 +46,10 @@ class Post {
 		void		getContentTypeData(std::string &header);
 		void		getLength(std::string header, Server &web);
 		void		handleBoundary(std::string fullRequestPathResource);
-		void		getBoundaryHeaderData(std::string &body, std::size_t &bytesReadTotal, std::string &fullRequestPathResource);
+		void		getBoundaryHeaderData(std::vector<char> &body, std::size_t &bytesReadTotal, std::string &fullRequestPathResource);
 		void		handleBinary(const std::string &fullRequestPathResource);
 		void		getBinaryContentDisposition(std::string &fullRequestPathResource, std::string &header);
-		void		copyToFile(const std::string &fullRequestPathResource, std::size_t limiter, std::string &body);
+		void		copyToFile(const std::string &fullRequestPathResource, std::size_t limiter, std::vector<char> &body);
 		std::string	createResponseMessage(std::string &fullRequestPathResource);
 
 		class	BadRequest : public std::exception{

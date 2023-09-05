@@ -6,7 +6,7 @@
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/25 20:02:57 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/09/04 19:02:22 by mtomomit         ###   ########.fr       */
+/*   Updated: 2023/09/05 20:44:21 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,28 +62,59 @@ void Post::getLength(std::string header, Server &web)
     }
 }
 
-void Post::getBoundaryHeaderData(std::string &body, std::size_t &bytesReadTotal, std::string &fullRequestPathResource)
+void    initializeContentDispositionMarker(std::vector<char> &contentDispositionMarker){
+    contentDispositionMarker.push_back('C');
+    contentDispositionMarker.push_back('o');
+    contentDispositionMarker.push_back('n');
+    contentDispositionMarker.push_back('t');
+    contentDispositionMarker.push_back('e');
+    contentDispositionMarker.push_back('n');
+    contentDispositionMarker.push_back('t');
+    contentDispositionMarker.push_back('-');
+    contentDispositionMarker.push_back('D');
+    contentDispositionMarker.push_back('i');
+    contentDispositionMarker.push_back('s');
+    contentDispositionMarker.push_back('p');
+    contentDispositionMarker.push_back('o');
+    contentDispositionMarker.push_back('s');
+    contentDispositionMarker.push_back('i');
+    contentDispositionMarker.push_back('t');
+    contentDispositionMarker.push_back('i');
+    contentDispositionMarker.push_back('o');
+    contentDispositionMarker.push_back('n');
+    contentDispositionMarker.push_back(':');
+    contentDispositionMarker.push_back(' ');
+}
+
+void Post::getBoundaryHeaderData(std::vector<char> &body, std::size_t &bytesReadTotal, std::string &fullRequestPathResource)
 {
     std::size_t findContentDisposition;
     std::size_t findFilename;
     std::string header;
     char        buffer[2];
     int         bytesRead;
-    size_t      headerEnd;
+    std::vector<char>::iterator headerEnd;
 
-    headerEnd = body.find("\r\n\r\n");
-    while (headerEnd == std::string::npos)
+    std::vector<char> doubleCRLF;
+    doubleCRLF.push_back('\r');
+    doubleCRLF.push_back('\n');
+    doubleCRLF.push_back('\r');
+    doubleCRLF.push_back('\n');
+    headerEnd = std::search(body.begin(), body.end(), doubleCRLF.begin(), doubleCRLF.end());
+    while (headerEnd == body.end())
     {
         bytesRead = recv(clientSock, buffer, sizeof(buffer) - 1, 0);
         bytesReadTotal += bytesRead;
         buffer[bytesRead] = 0;
-        body += buffer;
-        headerEnd = body.find("\r\n\r\n");
+        body.insert(body.end(), buffer, buffer + bytesRead);
+        headerEnd = std::search(body.begin(), body.end(), doubleCRLF.begin(), doubleCRLF.end());
     }
-    findContentDisposition = body.find("Content-Disposition: ");
-    if (findContentDisposition == std::string::npos)
+    std::vector<char> contentDispositionMarker;
+    initializeContentDispositionMarker(contentDispositionMarker);
+    findContentDisposition = std::search(body.begin(), body.end(), contentDispositionMarker.begin(), contentDispositionMarker.end()) - body.begin();
+    if (findContentDisposition == body.size())
         throw BadRequest();
-    contentDisposition = body.substr(findContentDisposition);
+    contentDisposition = std::string(body.begin() + findContentDisposition, body.end());
     contentDisposition = contentDisposition.substr(0, contentDisposition.find("\r\n"));
     findFilename = contentDisposition.find("filename=");
     if (findFilename != std::string::npos)
@@ -98,79 +129,82 @@ void Post::getBoundaryHeaderData(std::string &body, std::size_t &bytesReadTotal,
         std::ofstream file((fullRequestPathResource + "file").c_str(), std::ios::out | std::ios::binary);
         file.close();
     }
-    body = body.substr(headerEnd + 4);
+    body = std::vector<char>(headerEnd + 4, body.end());
 }
-
-void	Post::copyToFile(const std::string &fullRequestPathResource, std::size_t limiter, std::string &body)
+void Post::copyToFile(const std::string &fullRequestPathResource, std::size_t limiter, std::vector<char> &body)
 {
     if (filename != ""){
         std::ofstream file((fullRequestPathResource + filename).c_str(), std::ios::out | std::ios::binary | std::ios_base::app);
         if (file.is_open()){
-            file.write(body.c_str(), limiter);
+            file.write(body.data(), limiter);
             file.close();
         }
     }
     else{
         std::ofstream file((fullRequestPathResource + "file").c_str(), std::ios::out | std::ios::binary | std::ios_base::app);
         if (file.is_open()){
-            file.write(body.c_str(), limiter);
+            file.write(body.data(), limiter);
             file.close();
         }
     }
 }
 
-void	Post::handleBoundary(std::string fullRequestPathResource)
+void Post::handleBoundary(std::string fullRequestPathResource)
 {
-    char buffer[1024];
-    std::string body = "";
+    std::vector<char> buffer(1024);
+    std::vector<char> body;
     int bytesRead = 0;
-    bytesRead = recv(clientSock, buffer, sizeof(buffer) - 1, 0);
+    bytesRead = recv(clientSock, buffer.data(), buffer.size() - 1, 0);
     while (bytesRead == -1)
-        bytesRead = recv(clientSock, buffer, sizeof(buffer) - 1, 0);
+        bytesRead = recv(clientSock, buffer.data(), buffer.size() - 1, 0);
     size_t bytesReadTotal = bytesRead;
-    std::string bodyEnd = "";
-    size_t  findBoundary;
+    std::vector<char>::iterator findBoundary;
 
+    std::vector<char> mainBoundaryVec(mainBoundary.begin(), mainBoundary.end());
     buffer[bytesRead] = 0;
-    body = buffer;
-    if (body.substr(0, mainBoundary.size() + 2) != ( "--" + mainBoundary) )
+    body.insert(body.end(), buffer.begin(), buffer.begin() + bytesRead);
+    std::vector<char> doubleCRLF;
+    doubleCRLF.push_back('\r');
+    doubleCRLF.push_back('\n');
+    if (!std::equal(body.begin() + 2, body.begin() + mainBoundaryVec.size(), mainBoundaryVec.begin()))
         throw BadRequest();
-    while (bytesReadTotal != contentLength || body != ""){
-        body = bodyEnd + body;
-        bodyEnd = "";
-        findBoundary = body.find("--" + mainBoundary);
-        if (findBoundary != std::string::npos){
-            if (findBoundary != 0)
-                this->copyToFile(fullRequestPathResource, findBoundary - 2, body);
-            body = body.substr(findBoundary + mainBoundary.size() + 2);
-            if (body != "--\r\n")
+    while (bytesReadTotal != contentLength || !body.empty()){
+        findBoundary = std::search(body.begin(), body.end(), mainBoundaryVec.begin(), mainBoundaryVec.end());
+        if (findBoundary != body.end()){
+            if (findBoundary != body.begin() + 2){
+                this->copyToFile(fullRequestPathResource, findBoundary - body.begin() - 4, body);
+            }
+            body = std::vector<char>(findBoundary + mainBoundaryVec.size() + 2, body.end());
+            if (!std::equal(body.begin(), body.begin() + 2, doubleCRLF.begin()))
                 this->getBoundaryHeaderData(body, bytesReadTotal, fullRequestPathResource);
             else
-                body = "";
+                body.clear();
             bytesRead = body.size();
         }
         else
         {
-            if (static_cast<long unsigned int>(bytesRead) > mainBoundary.size())
-                bodyEnd = body.substr(bytesRead - mainBoundary.size() - 2);
-            else
-                bodyEnd = body;
-            this->copyToFile(fullRequestPathResource, bytesRead - mainBoundary.size() - 2, body);
-            bytesRead = recv(clientSock, buffer, sizeof(buffer) - 1, 0);
-            if (bytesRead != -1)
+            size_t  bytesReadFile;
+
+            bytesReadFile = bytesRead;
+            while (findBoundary == body.end())
             {
-                buffer[bytesRead] = 0;
-                bytesReadTotal += bytesRead;
-                body = buffer;
-            }
-            else
-            {
-                body = "";
-                bytesRead = 0;
+                bytesRead = recv(clientSock, buffer.data(), buffer.size() - 1, 0);
+                if (bytesRead != -1)
+                {
+                    buffer[bytesRead] = 0;
+                    bytesReadTotal += bytesRead;
+                    bytesReadFile += bytesRead;
+                    body.insert(body.end(), buffer.begin(), buffer.begin() + bytesRead);
+                }
+                if (bytesReadFile > mainBoundaryVec.size())
+                    findBoundary = std::search(body.begin() + bytesReadFile - mainBoundaryVec.size() - 4, body.end(), mainBoundaryVec.begin(), mainBoundaryVec.end());
+                else
+                    findBoundary = std::search(body.begin(), body.end(), mainBoundaryVec.begin(), mainBoundaryVec.end());
             }
         }
     }
 }
+
 
 void	Post::getBinaryContentDisposition(std::string &fullRequestPathResource, std::string &header)
 {
@@ -190,30 +224,30 @@ void	Post::getBinaryContentDisposition(std::string &fullRequestPathResource, std
     {
         filename = contentDisposition.substr(findFilename + 10);
         filename = filename.substr(0, filename.find("\""));
-        std::ofstream file((fullRequestPathResource + filename).c_str(), std::ios::out | std::ios::binary);
+        std::ofstream file((fullRequestPathResource + filename).c_str(), std::ios::binary);
         file.close();
     }
     else
     {
-        std::ofstream file((fullRequestPathResource + filename).c_str(), std::ios::out | std::ios::binary);
+        std::ofstream file((fullRequestPathResource + filename).c_str(), std::ios::binary);
         file.close();
         filename = "";
     }
 }
 
-void	Post::handleBinary(const std::string &fullRequestPathResource)
+void Post::handleBinary(const std::string &fullRequestPathResource)
 {
-    char buffer[2048];
-    std::string body = "";
+    std::vector<char> buffer(1024);
+    std::vector<char> body;
     int bytesRead = 0;
     size_t bytesReadTotal = 0;
 
     while (bytesReadTotal != contentLength){
-        bytesRead = recv(clientSock, buffer, sizeof(buffer) - 1, 0);
+        bytesRead = recv(clientSock, buffer.data(), buffer.size() - 1, 0);
         if (bytesRead != -1)
         {
             bytesReadTotal += bytesRead;
-            body.insert(body.end(), buffer, buffer + bytesRead);
+            body.insert(body.end(), buffer.begin(), buffer.begin() + bytesRead);
             copyToFile(fullRequestPathResource, body.size(), body);
             body.clear();
         }
@@ -252,6 +286,7 @@ std::string Post::postResponse(Server &web, std::string RequestPathResource, std
         }
     }
     catch(std::exception &e){
+        std::cout << e.what() << std::endl;
         return (e.what());
     }
 
