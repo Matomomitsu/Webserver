@@ -26,6 +26,7 @@ class Server{
         std::string locationRoot;
         std::string locationPath;
         std::vector<std::string> pathSegments;
+        bool containsCgi;
 
         void printMap(std::map<std::string, std::map<std::string, std::string> > map);
         std::string getItemFromServerMap(Server &web, std::string chavePrincipal, std::string chaveSecundaria);

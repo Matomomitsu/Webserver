@@ -71,6 +71,7 @@ bool  Request::checkGetRequest( Server &web, const std::string& message, std::st
     inet_ntop(res->ai_family, addr, ipstr, sizeof(ipstr));
     ipAddress = ipstr;
     freeaddrinfo(res);
+
     // Imprimir os resultados
     std::cout << "Método: " << requisiton << std::endl;
     std::cout << "Caminho do recurso: " << resourcePath << std::endl;
@@ -78,6 +79,9 @@ bool  Request::checkGetRequest( Server &web, const std::string& message, std::st
     std::cout << "IP: " << ipAddress << std::endl;
     std::cout << "Porta: " << port << std::endl;
 
+    size_t pos = resourcePath.rfind(".cgi");
+    if (pos != std::string::npos)
+        web.containsCgi=true;
     web.getPathResource = resourcePath;
     web.hostMessageReturn = ipAddress+":"+port;
     Response::findLocationRoot(web, resourcePath);
@@ -151,6 +155,8 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
 			printf("message in format\n");
         //else
             //fazer exceção
+        if (web.containsCgi == true)
+            std::cout << "ACREDITO QUE DEVE SER FEITO ASSIM O CGI, A ALTERAÇÃO FOI COLOCADA NA LINHA 82. " << std::endl;
         if (web.locationPath.empty())
             limitExcept = web.getItemFromServerMap(web, "Server " + web.hostMessageReturn, "limit_except");
         else
