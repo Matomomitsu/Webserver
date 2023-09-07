@@ -88,7 +88,6 @@ Server Parser::parserFile(std::string inputFilePath) {
     Server serverInstance;
 
     int errorPageCount = 0;
-    int cgiCount = 0;
     bool insideLocationBlock = false;
 
     if (arquivo.is_open()) {
@@ -130,11 +129,7 @@ Server Parser::parserFile(std::string inputFilePath) {
                 else if (line.find("timeout") != std::string::npos)
                     serverMap[ipFromServer]["timeout"] =  getValuesFromArchvie(line);
                 else if (line.find("cgi") != std::string::npos){
-                    cgiCount++;
-                    std::stringstream ss;
-                    ss << cgiCount;
-                    std::string stringValue = ss.str();
-                    serverMap[ipFromServer]["cgi "+stringValue] =  getValuesFromArchvie(line);
+                    serverMap[ipFromServer]["cgi"] +=  " "+getValuesFromArchvie(line);;
                 }
                 if (line.find("location") != std::string::npos){
                     insideLocationBlock = true;

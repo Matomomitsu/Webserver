@@ -7,6 +7,18 @@ std::string Request::itoa(int num) {
 	return oss.str();
 }
 
+std::vector<std::string> getCgiItens(Server &web){
+    std::string cgi = web.getItemFromServerMap(web, "Server "+web.hostMessageReturn, "cgi");
+    std::vector<std::string> words;
+    std::istringstream iss(cgi);
+    std::string word;
+
+    while(iss >> word)
+        words.push_back(word);
+    return(words);
+}
+
+
 bool  Request::checkGetRequest( Server &web, const std::string& message, std::string method)
 {
     //Encontra alinha inicial e final
@@ -79,11 +91,18 @@ bool  Request::checkGetRequest( Server &web, const std::string& message, std::st
     std::cout << "IP: " << ipAddress << std::endl;
     std::cout << "Porta: " << port << std::endl;
 
-    size_t pos = resourcePath.rfind(".cgi");
-    if (pos != std::string::npos)
-        web.containsCgi=true;
     web.getPathResource = resourcePath;
     web.hostMessageReturn = ipAddress+":"+port;
+
+    std::vector<std::string> cgiMap = getCgiItens(web);
+
+    for(size_t i = 0; i < cgiMap.size(); ++i){
+        size_t pos = resourcePath.rfind(cgiMap[i]);
+        if (pos != std::string::npos){
+            web.containsCgi = true;
+        }
+    }
+    
     Response::findLocationRoot(web, resourcePath);
 
     return (true);

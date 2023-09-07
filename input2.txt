@@ -31,7 +31,7 @@ server {
 	error_page 404 /custom_404.html;asdasdasda
 	error_page 405 /custom_405.html;asdasd
 	timeout 50;
-	cgi .php php-cgi;
+	cgi .php php-cgi .bataaaaaataaa;
 	cgi .py python3;
 	location / {dasdasd
 		limit_except GET;dasdasd
