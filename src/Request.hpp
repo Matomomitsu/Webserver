@@ -11,6 +11,7 @@
 # include <map>
 # include <sys/types.h>
 # include <stdio.h>
+# include <cstdlib>
 # include <netdb.h>
 # include <arpa/inet.h>
 # include <unistd.h>
@@ -27,6 +28,7 @@ class Request {
 		static void handleClient(Server web, int client_sock, Epoll *epoll, std::list<int> clientSockets);
 		static std::string itoa(int num);
 		static std::string createErrorMessage(Server &web);
+		static void   getCgiPath(Server &web);
 	private:
 
 };

@@ -6,7 +6,7 @@
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/25 20:02:57 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/09/05 20:44:21 by mtomomit         ###   ########.fr       */
+/*   Updated: 2023/09/07 16:57:17 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -263,17 +263,68 @@ std::string  Post::createResponseMessage(std::string &fullRequestPathResource){
     return(response);
 }
 
+std::string Post::handleCgi(const std::string &fullRequestPathResource, Server &web)
+{
+    int pipefd[2];
+    pid_t pid;
+
+    if (web.cgiInit == ""){
+        return ("Error 400");
+    }
+    pipe(pipefd);
+    pid = fork();
+    if (pid == 0){
+        close(pipefd[0]);
+        dup2(pipefd[1], STDOUT_FILENO);
+        close(pipefd[1]);
+        char* argv[] = { (char*)web.cgiInit.c_str(), (char*)fullRequestPathResource.c_str(), NULL };
+        char* envp[] = { (char *)web.queryString.c_str(), NULL};
+        if (execve(web.cgiInit.c_str(), argv, envp) == -1) {
+            std::cerr << "Execve error: " << std::strerror(errno) << '\n';
+            exit(1);
+        }
+    }
+    else if (pid > 0){
+        char buffer[1024];
+        std::string body;
+        ssize_t bytesRead;
+        int status;
+
+        close(pipefd[1]);
+        while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer) - 1)) > 0)
+        {
+            buffer[bytesRead] = '\0';
+            body += buffer;
+        }
+        close(pipefd[0]);
+        waitpid(pid, &status, 0);
+        body = Response::createResponseMessage(body);
+        return body;
+    }
+    else {
+        std::cerr << "Fork error\n";
+        return "Error 400";
+    }
+    return "Error 400";
+}
+
+
 std::string Post::postResponse(Server &web, std::string RequestPathResource, std::string header)
 {
     std::string fullRequestPathResource;
     std::string response;
 
-    fullRequestPathResource = Response::findLocationRoot(web, RequestPathResource) + "/";
+    fullRequestPathResource = Response::findLocationRoot(web, RequestPathResource);
     DIR* directory = opendir(fullRequestPathResource.c_str());
-    if (!directory)
-        return ("Error 400");
+    if (!directory){
+        if (web.containsCgi)
+            return (handleCgi(fullRequestPathResource, web));
+        else
+            return ("Error 400");
+    }
     else
         closedir(directory);
+    fullRequestPathResource = fullRequestPathResource + "/";
     try{
         this->getContentTypeData(header);
         this->getLength(header, web);

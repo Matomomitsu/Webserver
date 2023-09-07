@@ -18,6 +18,25 @@ std::vector<std::string> getCgiItens(Server &web){
     return(words);
 }
 
+void    Request::getCgiPath(Server &web)
+{
+    char* path = std::getenv("PATH");
+    std::vector<std::string> vectorPaths;
+    size_t                   i;
+
+    i = 0;
+    vectorPaths = Response::splitPath(path, ':');
+    while (i < vectorPaths.size()) {
+        if (access((vectorPaths[i] + "/" + web.cgiInit).c_str(), F_OK | X_OK) == 0)
+        {
+            web.cgiInit = vectorPaths[i] + "/" + web.cgiInit;
+            break ;
+        }
+        i++;
+    }
+    if (i == vectorPaths.size())
+        web.cgiInit = "";
+}
 
 bool  Request::checkGetRequest( Server &web, const std::string& message, std::string method)
 {
@@ -91,7 +110,18 @@ bool  Request::checkGetRequest( Server &web, const std::string& message, std::st
     std::cout << "IP: " << ipAddress << std::endl;
     std::cout << "Porta: " << port << std::endl;
 
-    web.getPathResource = resourcePath;
+    size_t  delimiterPath;
+
+    delimiterPath = resourcePath.find("?");
+    if (delimiterPath != std::string::npos){
+        web.getPathResource = resourcePath.substr(0, delimiterPath);
+        web.queryString = "QUERY_STRING=" + resourcePath.substr(delimiterPath + 1);
+        resourcePath = web.getPathResource;
+    }
+    else{
+        web.getPathResource = resourcePath;
+        web.queryString = "";
+    }
     web.hostMessageReturn = ipAddress+":"+port;
 
     std::vector<std::string> cgiMap = getCgiItens(web);
@@ -100,9 +130,10 @@ bool  Request::checkGetRequest( Server &web, const std::string& message, std::st
         size_t pos = resourcePath.rfind(cgiMap[i]);
         if (pos != std::string::npos){
             web.containsCgi = true;
+            web.cgiInit = cgiMap[i + 1];
+            Request::getCgiPath(web);
         }
     }
-    
     Response::findLocationRoot(web, resourcePath);
 
     return (true);
@@ -214,6 +245,8 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
         web.pathSegments.clear();
         web.locationPath.clear();
         web.locationRoot.clear();
+        web.cgiInit.clear();
+        web.containsCgi = false;
         char maxbuffer[128];
         while (bytesRead != -1){
             bytesRead = recv(client_sock, maxbuffer, sizeof(maxbuffer) - 1, 0);
