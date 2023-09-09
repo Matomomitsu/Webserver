@@ -6,7 +6,7 @@
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/25 20:02:57 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/09/07 16:57:17 by mtomomit         ###   ########.fr       */
+/*   Updated: 2023/09/08 22:27:43 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -94,8 +94,8 @@ void Post::getBoundaryHeaderData(std::vector<char> &body, std::size_t &bytesRead
     char        buffer[2];
     int         bytesRead;
     std::vector<char>::iterator headerEnd;
-
     std::vector<char> doubleCRLF;
+
     doubleCRLF.push_back('\r');
     doubleCRLF.push_back('\n');
     doubleCRLF.push_back('\r');
@@ -131,6 +131,7 @@ void Post::getBoundaryHeaderData(std::vector<char> &body, std::size_t &bytesRead
     }
     body = std::vector<char>(headerEnd + 4, body.end());
 }
+
 void Post::copyToFile(const std::string &fullRequestPathResource, std::size_t limiter, std::vector<char> &body)
 {
     if (filename != ""){
@@ -149,6 +150,30 @@ void Post::copyToFile(const std::string &fullRequestPathResource, std::size_t li
     }
 }
 
+void    Post::getFileData(std::vector<char>::iterator &findBoundary, std::vector<char> &body, std::vector<char> &buffer, size_t &bytesReadTotal, int &bytesRead)
+{
+    std::vector<char> mainBoundaryVec(mainBoundary.begin(), mainBoundary.end());
+
+        size_t  bytesReadFile;
+
+    bytesReadFile = bytesRead;
+    while (findBoundary == body.end())
+    {
+        bytesRead = recv(clientSock, buffer.data(), buffer.size() - 1, 0);
+        if (bytesRead != -1)
+        {
+            buffer[bytesRead] = 0;
+            bytesReadTotal += bytesRead;
+            bytesReadFile += bytesRead;
+            body.insert(body.end(), buffer.begin(), buffer.begin() + bytesRead);
+        }
+        if (bytesReadFile > mainBoundaryVec.size())
+            findBoundary = std::search(body.begin() + bytesReadFile - mainBoundaryVec.size() - 4, body.end(), mainBoundaryVec.begin(), mainBoundaryVec.end());
+        else
+            findBoundary = std::search(body.begin(), body.end(), mainBoundaryVec.begin(), mainBoundaryVec.end());
+    }
+}
+
 void Post::handleBoundary(std::string fullRequestPathResource)
 {
     std::vector<char> buffer(1024);
@@ -163,9 +188,9 @@ void Post::handleBoundary(std::string fullRequestPathResource)
     std::vector<char> mainBoundaryVec(mainBoundary.begin(), mainBoundary.end());
     buffer[bytesRead] = 0;
     body.insert(body.end(), buffer.begin(), buffer.begin() + bytesRead);
-    std::vector<char> doubleCRLF;
-    doubleCRLF.push_back('\r');
-    doubleCRLF.push_back('\n');
+    std::vector<char> CRLF;
+    CRLF.push_back('\r');
+    CRLF.push_back('\n');
     if (!std::equal(body.begin() + 2, body.begin() + mainBoundaryVec.size(), mainBoundaryVec.begin()))
         throw BadRequest();
     while (bytesReadTotal != contentLength || !body.empty()){
@@ -175,33 +200,14 @@ void Post::handleBoundary(std::string fullRequestPathResource)
                 this->copyToFile(fullRequestPathResource, findBoundary - body.begin() - 4, body);
             }
             body = std::vector<char>(findBoundary + mainBoundaryVec.size() + 2, body.end());
-            if (!std::equal(body.begin(), body.begin() + 2, doubleCRLF.begin()))
+            if (!std::equal(body.begin(), body.begin() + 2, CRLF.begin()))
                 this->getBoundaryHeaderData(body, bytesReadTotal, fullRequestPathResource);
             else
                 body.clear();
             bytesRead = body.size();
         }
         else
-        {
-            size_t  bytesReadFile;
-
-            bytesReadFile = bytesRead;
-            while (findBoundary == body.end())
-            {
-                bytesRead = recv(clientSock, buffer.data(), buffer.size() - 1, 0);
-                if (bytesRead != -1)
-                {
-                    buffer[bytesRead] = 0;
-                    bytesReadTotal += bytesRead;
-                    bytesReadFile += bytesRead;
-                    body.insert(body.end(), buffer.begin(), buffer.begin() + bytesRead);
-                }
-                if (bytesReadFile > mainBoundaryVec.size())
-                    findBoundary = std::search(body.begin() + bytesReadFile - mainBoundaryVec.size() - 4, body.end(), mainBoundaryVec.begin(), mainBoundaryVec.end());
-                else
-                    findBoundary = std::search(body.begin(), body.end(), mainBoundaryVec.begin(), mainBoundaryVec.end());
-            }
-        }
+            getFileData(findBoundary, body, buffer, bytesReadTotal, bytesRead);
     }
 }
 
@@ -263,48 +269,87 @@ std::string  Post::createResponseMessage(std::string &fullRequestPathResource){
     return(response);
 }
 
-std::string Post::handleCgi(const std::string &fullRequestPathResource, Server &web)
+void    Post::execCgi(const std::string &fullRequestPathResource, Server &web, int *pipefd, int *pipe2fd)
+{
+    std::string cLength;
+    std::string cType;
+
+    cLength = "CONTENT_LENGTH=" + Request::itoa(this->contentLength);
+    cType = "CONTENT_TYPE=" + this->contentType;
+    close(pipefd[0]);
+    close(pipe2fd[1]);
+    dup2(pipefd[1], STDOUT_FILENO);
+    dup2(pipe2fd[0], STDIN_FILENO);
+    close(pipe2fd[0]);
+    close(pipefd[1]);
+    char* argv[] = { (char*)web.cgiInit.c_str(), (char*)fullRequestPathResource.c_str(), NULL };
+    char* envp[] = { (char *)web.queryString.c_str(), (char *)"REQUEST_METHOD=POST", (char *)cLength.c_str(), (char *)cType.c_str(), NULL};
+    if (execve(web.cgiInit.c_str(), argv, envp) == -1) {
+        std::cerr << "Execve error: " << std::strerror(errno) << '\n';
+        exit(1);
+    }
+}
+
+std::string    Post::receiveOutput(int *pipefd, int *pipe2fd, pid_t pid)
+{
+    char buffer[1024];
+    std::string output;
+    size_t bytesRead;
+    int status;
+    std::vector<char> vecBuffer(1024);
+    std::vector<char> body;
+    int bytesReadInt = 0;
+    size_t bytesReadTotal = 0;
+
+    while (bytesReadTotal != contentLength){
+        bytesReadInt = recv(clientSock, vecBuffer.data(), vecBuffer.size() - 1, 0);
+        if (bytesReadInt != -1)
+        {
+            bytesReadTotal += bytesReadInt;
+            body.insert(body.end(), vecBuffer.begin(), vecBuffer.begin() + bytesReadInt);
+        }
+
+    }
+    close(pipe2fd[0]);
+    write(pipe2fd[1], body.data(), body.size());
+    close(pipe2fd[1]);
+    close(pipefd[1]);
+    while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer) - 1)) > 0)
+    {
+        buffer[bytesRead] = '\0';
+        output += buffer;
+    }
+    close(pipefd[0]);
+    waitpid(pid, &status, 0);
+    output = Response::createResponseMessage(output);
+    return output;
+}
+
+std::string Post::handleCgi(const std::string &fullRequestPathResource, Server &web, std::string &header)
 {
     int pipefd[2];
+    int pipe2fd[2];
     pid_t pid;
 
-    if (web.cgiInit == ""){
+    try{
+        this->getContentTypeData(header);
+        this->getLength(header, web);
+    }
+    catch(std::exception &e){
+        std::cout << e.what() << std::endl;
+        return (e.what());
+    }
+    if (web.cgiInit == "")
         return ("Error 400");
-    }
     pipe(pipefd);
+    pipe(pipe2fd);
     pid = fork();
-    if (pid == 0){
-        close(pipefd[0]);
-        dup2(pipefd[1], STDOUT_FILENO);
-        close(pipefd[1]);
-        char* argv[] = { (char*)web.cgiInit.c_str(), (char*)fullRequestPathResource.c_str(), NULL };
-        char* envp[] = { (char *)web.queryString.c_str(), NULL};
-        if (execve(web.cgiInit.c_str(), argv, envp) == -1) {
-            std::cerr << "Execve error: " << std::strerror(errno) << '\n';
-            exit(1);
-        }
-    }
-    else if (pid > 0){
-        char buffer[1024];
-        std::string body;
-        ssize_t bytesRead;
-        int status;
-
-        close(pipefd[1]);
-        while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer) - 1)) > 0)
-        {
-            buffer[bytesRead] = '\0';
-            body += buffer;
-        }
-        close(pipefd[0]);
-        waitpid(pid, &status, 0);
-        body = Response::createResponseMessage(body);
-        return body;
-    }
-    else {
+    if (pid == 0)
+        this->execCgi(fullRequestPathResource, web, pipefd, pipe2fd);
+    else if (pid > 0)
+        return (this->receiveOutput(pipefd, pipe2fd, pid));
+    else
         std::cerr << "Fork error\n";
-        return "Error 400";
-    }
     return "Error 400";
 }
 
@@ -318,7 +363,7 @@ std::string Post::postResponse(Server &web, std::string RequestPathResource, std
     DIR* directory = opendir(fullRequestPathResource.c_str());
     if (!directory){
         if (web.containsCgi)
-            return (handleCgi(fullRequestPathResource, web));
+            return (handleCgi(fullRequestPathResource, web, header));
         else
             return ("Error 400");
     }
