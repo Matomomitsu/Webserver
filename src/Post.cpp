@@ -6,7 +6,7 @@
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/25 20:02:57 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/09/08 22:27:43 by mtomomit         ###   ########.fr       */
+/*   Updated: 2023/09/11 19:18:20 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,8 +46,10 @@ void Post::getLength(std::string header, Server &web)
     findLength = header.find("Content-Length: ");
     if (findLength != std::string::npos)
         stringLength = header.substr(findLength);
-    else
-        throw LengthRequired();
+    else{
+        contentLength = 0;
+        return ;
+    }
     stringLength = stringLength.substr(0, stringLength.find("\r\n"));
     stringLength = stringLength.substr(16);
     contentLength = atol(stringLength.c_str());
@@ -60,6 +62,23 @@ void Post::getLength(std::string header, Server &web)
         if (contentLength > static_cast<long unsigned int>(atol(clientMaxBodySize.c_str())))
             throw RequestEntityTooLarge();
     }
+}
+
+void Post::getTransferEncoding(std::string header)
+{
+    std::size_t findTransferEncoding;
+    std::string stringTransferEncoding;
+    std::string clientMaxBodySize;
+
+    findTransferEncoding = header.find("Transfer-Encoding: ");
+    if (findTransferEncoding != std::string::npos)
+        stringTransferEncoding = header.substr(findTransferEncoding);
+    else
+        throw LengthRequired();
+    stringTransferEncoding = stringTransferEncoding.substr(0, stringTransferEncoding.find("\r\n"));
+    transferEncoding = stringTransferEncoding.substr(19);
+    if (transferEncoding.find("chunked") == std::string::npos)
+        throw LengthRequired();
 }
 
 void    initializeContentDispositionMarker(std::vector<char> &contentDispositionMarker){
@@ -373,6 +392,11 @@ std::string Post::postResponse(Server &web, std::string RequestPathResource, std
     try{
         this->getContentTypeData(header);
         this->getLength(header, web);
+        std::cout << contentLength << std::endl;
+        if (contentLength == 0)
+        {
+            throw LengthRequired();
+        }
         if (this->contentType == "multipart/form-data")
             this->handleBoundary(fullRequestPathResource);
         else

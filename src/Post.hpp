@@ -6,7 +6,7 @@
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/25 20:02:59 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/09/08 17:08:11 by mtomomit         ###   ########.fr       */
+/*   Updated: 2023/09/11 20:29:30 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,10 +42,12 @@ class Post {
 		std::string	contentDisposition;
 		std::string	filename;
 		std::size_t	contentLength;
+		std::string	transferEncoding;
 		int			clientSock;
 		std::string	postResponse(Server &web, std::string RequestPathResource, std::string header);
 		void		getContentTypeData(std::string &header);
 		void		getLength(std::string header, Server &web);
+		void 		getTransferEncoding(std::string header);
 		void		getFileData(std::vector<char>::iterator &findBoundary, std::vector<char> &body, std::vector<char> &buffer, size_t &bytesReadTotal, int &bytesRead);
 		void		handleBoundary(std::string fullRequestPathResource);
 		std::string	handleCgi(const std::string &fullRequestPathResource, Server &web, std::string &header);

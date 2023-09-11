@@ -250,6 +250,7 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
         char maxbuffer[128];
         while (bytesRead != -1){
             bytesRead = recv(client_sock, maxbuffer, sizeof(maxbuffer) - 1, 0);
+            maxbuffer[bytesRead] = 0;
         }
 	}
 	else if (bytesRead == 0)

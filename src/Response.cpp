@@ -35,6 +35,7 @@ std::vector<std::string> Response::splitPath(const std::string& path, char delim
     std::vector<std::string> segments;
     std::stringstream ss(path);
     std::string segment;
+
     while (std::getline(ss, segment, delimiter)) {
         if (!segment.empty()) {
             segments.push_back(segment);
@@ -48,8 +49,14 @@ std::string  Response::findLocationRoot(Server &web, std::string RequestPathReso
 
     for (outerIt = web.locationMap.begin(); outerIt != web.locationMap.end(); ++outerIt){
         if (outerIt->first == "Server " + web.hostMessageReturn){
-            if (web.pathSegments.empty())
+            if (web.pathSegments.empty()){
+                size_t  findContentTypeReturn;
+                web.contentType = "";
                 web.pathSegments = splitPath(RequestPathResource, '/');
+                findContentTypeReturn = web.pathSegments[web.pathSegments.size() - 1].rfind(".");
+                if (findContentTypeReturn != std::string::npos)
+                    web.contentType = web.pathSegments[web.pathSegments.size() - 1].substr(findContentTypeReturn + 1);
+            }
             if (web.locationRoot.empty())
                 web.locationRoot = checkLocationRoot(web.pathSegments, outerIt->second, web);
             if (web.locationRoot.empty()){

@@ -25,6 +25,7 @@ class Server{
         std::string hostMessageReturn;
         std::string locationRoot;
         std::string locationPath;
+        std::string contentType;
         std::vector<std::string> pathSegments;
         bool containsCgi;
         std::string cgiInit;
@@ -33,16 +34,8 @@ class Server{
         void printMap(std::map<std::string, std::map<std::string, std::string> > map);
         std::string getItemFromServerMap(Server &web, std::string chavePrincipal, std::string chaveSecundaria);
         std::string getItemFromLocationMap(Server &web, std::string chavePrincipal, std::string chaveSecundaria);
-        std::string  responseRequest(Server &web, std::string RequestPathResource);
-        std::string  getResponseFile(std::string responseRequestFilePath, Server &web, std::string RequestPathResource);
-        std::string  createResponseMessage(std::string body);
-        bool  checkGetRequest( const std::string& message, std::string method);
         bool  checkType( const std::string& requestMessage);
         std::string getRequestPathFile(void);
-        std::string  findLocationRoot(Server &web, std::string RequestPathResource);
-        std::vector<std::string> splitPath(const std::string& path, char delimiter);
-        std::string checkLocationRoot(const std::vector<std::string>& webPathSegments, std::map <std::string, std::string>& locationMap, Server &web);
-        void addIndex(Server &web, std::string &path);
 
     private:
 };
