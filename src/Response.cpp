@@ -92,7 +92,7 @@ std::vector<std::string> Response::splitPath(const std::string& path, char delim
 
 std::string returnContenType(std::string contentType){
     std::ifstream file("./utils/contentType.txt"); // Abra o arquivo com os tipos de "Content-Type"
-    std::vector<std::string> contentTypes; 
+    std::vector<std::string> contentTypes;
     if (!file) {
         std::cerr << "Erro ao abrir o arquivo." << std::endl;
         return ""; // Retorna uma string vazia em caso de erro
@@ -109,7 +109,7 @@ std::string returnContenType(std::string contentType){
             return(*it);
     }
 
-    return ("");
+    return ("text/plain");
 }
 
 std::string  Response::findLocationRoot(Server &web, std::string RequestPathResource){
@@ -147,6 +147,49 @@ std::string  Response::findLocationRoot(Server &web, std::string RequestPathReso
         }
     }
     return(RequestPathResource);
+}
+
+void Response::addIndex(Server &web, std::string &path){
+    std::string currentPath;
+    std::string matchingLocationPath;
+    std::string fileToReturn = "index.html";
+    std::string temp;
+
+    if (web.locationRoot != web.getItemFromServerMap(web, "Server " + web.hostMessageReturn, "root")){
+        temp = web.getItemFromLocationMap(web, "Server " + web.hostMessageReturn, "index " + web.locationPath);
+        if (temp != "wrong")
+            fileToReturn = temp;
+    }
+    else{
+        fileToReturn = web.getItemFromServerMap(web, "Server " + web.hostMessageReturn, "index");
+        if (fileToReturn == "wrong")
+            fileToReturn = "index.html";
+    }
+    std::vector<std::string> files = splitPath(fileToReturn, ' ');
+    DIR* directory = opendir(path.c_str());
+    if(directory){
+        struct dirent* entry;
+        while ((entry = readdir(directory)) != NULL){
+            for (std::vector<std::string>::const_iterator filesIterator = files.begin(); filesIterator != files.end(); ++filesIterator) {
+                if (*filesIterator == entry->d_name){
+                    size_t  findContentType;
+                    path = path + "/" + entry->d_name;
+                    temp = entry->d_name;
+                    findContentType = temp.rfind(".");
+                    if (findContentType != std::string::npos)
+                        web.contentType = returnContenType(temp.substr(findContentType + 1));
+                    closedir(directory);
+                    return ;
+                }
+            }
+        }
+        closedir(directory);
+        return ;
+    }
+    else{
+        closedir(directory);
+        return ;
+    }
 }
 
 std::string  Response::getResponseFile(std::string responseRequestFilePath, Server &web, std::string RequestPathResource){
@@ -199,44 +242,6 @@ std::string  Response::responseRequest(Server &web, std::string RequestPathResou
     std::string response;
     response = getResponseFile(fullRequestPathResource, web, RequestPathResource);
     return(response);
-}
-
-void Response::addIndex(Server &web, std::string &path){
-    std::string currentPath;
-    std::string matchingLocationPath;
-    std::string fileToReturn = "index.html";
-    std::string temp;
-
-    if (web.locationRoot != web.getItemFromServerMap(web, "Server " + web.hostMessageReturn, "root")){
-        temp = web.getItemFromLocationMap(web, "Server " + web.hostMessageReturn, "index " + web.locationPath);
-        if (temp != "wrong")
-            fileToReturn = temp;
-    }
-    else{
-        fileToReturn = web.getItemFromServerMap(web, "Server " + web.hostMessageReturn, "index");
-        if (fileToReturn == "wrong")
-            fileToReturn = "index.html";
-    }
-    std::vector<std::string> files = splitPath(fileToReturn, ' ');
-    DIR* directory = opendir(path.c_str());
-    if(directory){
-        struct dirent* entry;
-        while ((entry = readdir(directory)) != NULL){
-            for (std::vector<std::string>::const_iterator filesIterator = files.begin(); filesIterator != files.end(); ++filesIterator) {
-                if (*filesIterator == entry->d_name){
-                    path = path + "/" + entry->d_name;
-                    closedir(directory);
-                    return ;
-                }
-            }
-        }
-        closedir(directory);
-        return ;
-    }
-    else{
-        closedir(directory);
-        return ;
-    }
 }
 
 std::string  Response::createResponseMessage(Server &web, std::string body){
@@ -366,6 +371,11 @@ std::string Response::errorType(std::string erro){
     else if(erro == "Error 415"){
         body = getErrorReturn("./utils/error_page/415.html");
         content = Response::createResponseMessageWithError(body, "415", "Unsupported Media Type");
+        return (content);
+    }
+    else if(erro == "Error 405"){
+        body = getErrorReturn("./utils/error_page/405.html");
+        content = Response::createResponseMessageWithError(body, "405", "Method Not Allowed");
         return (content);
     }
     else{

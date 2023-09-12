@@ -10,15 +10,16 @@
 # include <cstdio>
 # include <vector>
 # include <map>
-#include <string>
-#include "../src/Server.hpp"
+# include <string>
+# include <algorithm>
+# include "../src/Server.hpp"
 
 class Parser{
     public:
         std::string inputFileRead;
         Server parserFile(std::string inputFilePath);
     private:
-        
+
 };
 
 #endif

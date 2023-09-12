@@ -6,7 +6,7 @@
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/25 20:02:57 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/09/11 19:18:20 by mtomomit         ###   ########.fr       */
+/*   Updated: 2023/09/12 19:24:32 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -319,6 +319,8 @@ std::string    Post::receiveOutput(Server &web, int *pipefd, int *pipe2fd, pid_t
     std::vector<char> body;
     int bytesReadInt = 0;
     size_t bytesReadTotal = 0;
+    std::string contentTypeOutput;
+    size_t      findContentTypeOutput;
 
     while (bytesReadTotal != contentLength){
         bytesReadInt = recv(clientSock, vecBuffer.data(), vecBuffer.size() - 1, 0);
@@ -340,6 +342,15 @@ std::string    Post::receiveOutput(Server &web, int *pipefd, int *pipe2fd, pid_t
     }
     close(pipefd[0]);
     waitpid(pid, &status, 0);
+    if (status != 0)
+        return ("Error 400");
+    findContentTypeOutput = output.find("Content-Type");
+    if (findContentTypeOutput != std::string::npos){
+        contentTypeOutput = output.substr(findContentTypeOutput);
+        contentTypeOutput = contentTypeOutput.substr(0, contentTypeOutput.find("\r\n"));
+        web.contentType = contentTypeOutput.substr(contentTypeOutput.find(":") + 1);
+    }
+    output = output.substr(output.find("\r\n\r\n") + 4);
     output = Response::createResponseMessage(web, output);
     return output;
 }

@@ -1,6 +1,12 @@
 # include "./Parser.hpp"
 #include "../src/Server.hpp"
 
+std::string trim(const std::string& str) {
+    std::string::const_iterator it2 = std::find_if( str.begin() , str.end() , std::not1(std::ptr_fun<int, int>(std::isspace)));
+    std::string::const_iterator it3 = std::find_if( str.rbegin() , str.rend() , std::not1(std::ptr_fun<int, int>(std::isspace))).base();
+    return str.substr(it2 - str.begin() , it3 - it2);
+}
+
 std::string getPortFromInputFile(std::string stringLine){
     // Encontra a posição do ":" e do ";" na string
     size_t colonPos = stringLine.find(":");
@@ -96,63 +102,61 @@ Server Parser::parserFile(std::string inputFilePath) {
         bool insideServerBlock = false;
 
         while (std::getline(arquivo, line)) {
-
-            if (line.find("server {")){
+            line = trim(line);
+            if (line.substr(0, 8) == "server {"){
                 insideServerBlock = true;
             }
             if (insideServerBlock) { //isso pode estar em outra função.
 
-                if (line.find("listen") != std::string::npos){
+                if (line.substr(0, 7) == "listen "){
                     ip = getIpFromInputFile(line);
                     port = getPortFromInputFile(line);
                     ipFromServer = "Server " + ip+":"+port;
                     serverMap[ipFromServer]["ip"] =  ip;
                     serverMap[ipFromServer]["port"] = port;
                 }
-                else if (line.find("server_name") != std::string::npos)
+                else if (line.substr(0, 12) == "server_name ")
                     serverMap[ipFromServer]["server_name"] =  getValuesFromArchvie(line);
-                else if (line.find("root") != std::string::npos && !insideLocationBlock)
+                else if (line.substr(0, 5) == "root " && !insideLocationBlock)
                     serverMap[ipFromServer]["root"] =  getValuesFromArchvie(line);
-                else if (line.find("index") != std::string::npos && !insideLocationBlock)
+                else if (line.substr(0, 6) == "index " && !insideLocationBlock)
                     serverMap[ipFromServer]["index"] =  getValuesFromArchvie(line);
-                else if (line.find("client_max_body_size") != std::string::npos && !insideLocationBlock)
+                else if (line.substr(0, 21) == "client_max_body_size " && !insideLocationBlock)
                     serverMap[ipFromServer]["client_max_body_size"] =  getValuesFromArchvie(line);
-                else if (line.find("limit_except") != std::string::npos && !insideLocationBlock)
+                else if (line.substr(0, 13) == "limit_except " && !insideLocationBlock)
                     serverMap[ipFromServer]["limit_except"] =  getValuesFromArchvie(line);
-                else if (line.find("error_page") != std::string::npos){
+                else if (line.substr(0, 11) == "error_page "){
                     errorPageCount++;
                     std::stringstream ss;
                     ss << errorPageCount;
                     std::string stringValue = ss.str();
                     serverMap[ipFromServer]["error_page "+getErrorNumber(line)] =  getErrorPageValues(line, "error_page");
                 }
-                else if (line.find("timeout") != std::string::npos)
-                    serverMap[ipFromServer]["timeout"] =  getValuesFromArchvie(line);
-                else if (line.find("cgi") != std::string::npos){
+                else if (line.substr(0, 4) == "cgi "){
                     serverMap[ipFromServer]["cgi"] +=  " "+getValuesFromArchvie(line);;
                 }
-                if (line.find("location") != std::string::npos){
+                if (line.substr(0, 9) == "location "){
                     insideLocationBlock = true;
                     locationPath = extractPathAfterSlash(line);
                 }
                 if (insideLocationBlock){
-                    if (line.find('}') != std::string::npos)
+                    if (line == "}")
                     {
                         insideLocationBlock = false;
                         if (locationMap[ipFromServer]["root "+locationPath] == "")
                             locationMap[ipFromServer]["root "+locationPath] = serverMap[ipFromServer]["root"];
                         //locationMap[ipFromServer]["index "+locationPath] += " " + serverMap[ipFromServer]["index"];
                     }
-                    else if (line.find("location") != std::string::npos){
+                    else if (line.substr(0, 9) == "location "){
                         locationMap[ipFromServer]["Path "+locationPath] =  locationPath;
                     }
-                    else if (line.find("limit_except") != std::string::npos)
+                    else if (line.substr(0, 13) == "limit_except ")
                         locationMap[ipFromServer]["limit_except "+locationPath] =  getValuesFromArchvie(line);
-                    else if (line.find("client_max_body_size") != std::string::npos)
+                    else if (line.substr(0, 21) == "client_max_body_size ")
                         locationMap[ipFromServer]["client_max_body_size "+locationPath] =  getValuesFromArchvie(line);
-                    else if (line.find("root") != std::string::npos)
+                    else if (line.substr(0, 5) == "root ")
                         locationMap[ipFromServer]["root "+locationPath] =  getValuesFromArchvie(line);
-                    else if (line.find("index") != std::string::npos)
+                    else if (line.substr(0, 6) == "index ")
                         locationMap[ipFromServer]["index "+locationPath] =  getValuesFromArchvie(line);
                 }
             }

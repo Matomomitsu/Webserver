@@ -6,7 +6,7 @@
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/08 16:05:48 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/08/14 20:17:53 by mtomomit         ###   ########.fr       */
+/*   Updated: 2023/09/12 18:41:17 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,9 +46,7 @@ void	Sockets::handleError(std::string functionName, int epoll_fd, struct addrinf
 
 void Sockets::setNonBlocking(int fd)
 {
-	int oldFlags = fcntl(fd, F_GETFL);
-	int newFlags = oldFlags | O_NONBLOCK;
-	fcntl(fd, F_SETFL, newFlags);
+	fcntl(fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
 }
 
 void	Sockets::createSockets(Server web, struct epoll_event *event, int epoll_fd)

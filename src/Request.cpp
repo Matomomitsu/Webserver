@@ -235,7 +235,7 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
                 http_response = Response::errorType(http_response);
         }
         else{
-            http_response = Response::errorType("Error 500");
+            http_response = Response::errorType("Error 405");
         }
         send(client_sock, http_response.c_str(), http_response.length(), 0);
         web.pathSegments.clear();

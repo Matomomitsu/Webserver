@@ -1,18 +1,15 @@
-worker_connections  1024;
-
 server {
 	listen 127.0.0.1:15020;
 	server_name www.localhost.com localhost.com;
 	root .;
-	index index.html index.php;
+	index index.html index.gzip;
 	error_page 404 /index.html;
 	error_page 405 /custom_405.html;
-	timeout 50;
 	cgi .php php-cgi;
 	cgi .py python3;
 	location /put {
 		limit_except POST DELETE;
-		index index.html index.php;
+		index index.html index.gzip;
 		root ./pute;
 	}
 	location /delete {
