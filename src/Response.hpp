@@ -1,13 +1,12 @@
 #ifndef RESPONSE_HPP
 # define RESPONSE_HPP
 
-# include <cstring>
-# include <cstdlib>
 # include <iostream>
 # include <vector>
 # include <fcntl.h>
 # include <fstream>
 # include <sstream>
+# include <cstring>
 # include <cstdio>
 # include <vector>
 # include <map>
@@ -18,6 +17,10 @@
 # include <unistd.h>
 # include <string>
 # include <dirent.h>
+# include <cstdlib>
+# include <algorithm>
+# include <sys/types.h>
+# include <sys/wait.h>
 # include "Server.hpp"
 # include "Request.hpp"
 

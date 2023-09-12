@@ -120,7 +120,7 @@ bool  Request::checkGetRequest( Server &web, const std::string& message, std::st
     }
     else{
         web.getPathResource = resourcePath;
-        web.queryString = "";
+        web.queryString = "QUERY_STRING=";
     }
     web.hostMessageReturn = ipAddress+":"+port;
 
@@ -205,8 +205,6 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
 			printf("message in format\n");
         //else
             //fazer exceção
-        if (web.containsCgi == true)
-            std::cout << "ACREDITO QUE DEVE SER FEITO ASSIM O CGI, A ALTERAÇÃO FOI COLOCADA NA LINHA 82. " << std::endl;
         if (web.locationPath.empty())
             limitExcept = web.getItemFromServerMap(web, "Server " + web.hostMessageReturn, "limit_except");
         else
