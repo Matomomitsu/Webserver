@@ -123,9 +123,7 @@ bool  Request::checkGetRequest( Server &web, const std::string& message, std::st
         web.queryString = "QUERY_STRING=";
     }
     web.hostMessageReturn = ipAddress+":"+port;
-
     std::vector<std::string> cgiMap = getCgiItens(web);
-
     for(size_t i = 0; i < cgiMap.size(); ++i){
         size_t pos = resourcePath.rfind(cgiMap[i]);
         if (pos != std::string::npos){

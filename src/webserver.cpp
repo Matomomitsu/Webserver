@@ -4,10 +4,10 @@
 
 //void createSocket(Server listServer)
 
-void run(Server web){
+void run(Server &web){
     std::string port;
 
    web.containsCgi = false;
-   web.printMap(web.serverMap);
+//   web.printMap(web.serverMap);
 
 }

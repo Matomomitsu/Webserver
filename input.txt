@@ -10,7 +10,7 @@ server {
 	timeout 50;
 	cgi .php php-cgi;
 	cgi .py python3;
-	location / {
+	location ./ {
 		limit_except GET;
 		client_max_body_size 100;
 	}
