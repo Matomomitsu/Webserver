@@ -42,7 +42,7 @@ std::string handleCgi(const std::string &fullRequestPathResource, Server &web)
         }
         close(pipefd[0]);
         waitpid(pid, &status, 0);
-        body = Response::createResponseMessage(body);
+        body = Response::createResponseMessage(web, body);
         return body;
     }
     else {
@@ -89,6 +89,29 @@ std::vector<std::string> Response::splitPath(const std::string& path, char delim
     return (segments);
 }
 
+
+std::string returnContenType(std::string contentType){
+    std::ifstream file("./utils/contentType.txt"); // Abra o arquivo com os tipos de "Content-Type"
+    std::vector<std::string> contentTypes; 
+    if (!file) {
+        std::cerr << "Erro ao abrir o arquivo." << std::endl;
+        return ""; // Retorna uma string vazia em caso de erro
+    }
+    std::string line;
+    while (std::getline(file, line)) {
+        contentTypes.push_back(line);
+    }
+    file.close();
+
+    for (std::vector<std::string>::iterator it = contentTypes.begin(); it != contentTypes.end(); ++it) {
+        size_t pos = it->find(contentType);
+        if (pos != std::string::npos)
+            return(*it);
+    }
+
+    return ("");
+}
+
 std::string  Response::findLocationRoot(Server &web, std::string RequestPathResource){
     std::map<std::string, std::map<std::string, std::string> >::iterator outerIt;
 
@@ -96,12 +119,16 @@ std::string  Response::findLocationRoot(Server &web, std::string RequestPathReso
         if (outerIt->first == "Server " + web.hostMessageReturn){
             if (web.pathSegments.empty()){
                 size_t  findContentTypeReturn;
+                std::string type;
                 web.contentType = "";
                 web.pathSegments = splitPath(RequestPathResource, '/');
                 if (!web.pathSegments.empty()){
                     findContentTypeReturn = web.pathSegments[web.pathSegments.size() - 1].rfind(".");
-                    if (findContentTypeReturn != std::string::npos)
-                        web.contentType = web.pathSegments[web.pathSegments.size() - 1].substr(findContentTypeReturn + 1);
+                    if (findContentTypeReturn != std::string::npos){
+                        type = web.pathSegments[web.pathSegments.size() - 1].substr(findContentTypeReturn + 1);
+                        web.contentType = returnContenType(type);
+                    }
+                        //web.contentType = web.pathSegments[web.pathSegments.size() - 1].substr(findContentTypeReturn + 1);
                 }
             }
             if (web.locationRoot.empty())
@@ -156,7 +183,7 @@ std::string  Response::getResponseFile(std::string responseRequestFilePath, Serv
         std::vector<std::string>().swap(web.pathSegments);
         return("Error 404");
     }
-    response = createResponseMessage(content);
+    response = createResponseMessage(web, content);
     closedir(directory);
     std::vector<std::string>().swap(web.pathSegments);
     return (response);
@@ -212,15 +239,16 @@ void Response::addIndex(Server &web, std::string &path){
     }
 }
 
-std::string  Response::createResponseMessage(std::string body){
+std::string  Response::createResponseMessage(Server &web, std::string body){
     std::string body_size = itoa(body.size() + 1);
     std::string response = "HTTP/1.1 200 OK\r\n"
-                            "Content-Type: text/html\r\n"
+                            "Content-Type: "+web.contentType+"\r\n"
                             "Content-Length: " + body_size + "\r\n"
                             "\r\n"
                             + body + "\n";
     return(response);
 }
+
 
 std::string Response::createResponseMessageWithError(std::string body, std::string erro, std::string messageErro){
     std::string body_size = Request::itoa(body.size() + 1);
@@ -261,7 +289,7 @@ std::string Response::deleteResponse(Server &web, std::string pathToDelete){
         if (std::remove(filename) == 0) {
             std::cout << "Arquivo no caminho " << rootPath << " deletado." << std::endl;
             std::string body = getResponseFileDefault("./utils/deleteSucces.html");
-            response = Response::createResponseMessage(body);
+            response = Response::createResponseMessage(web, body);
             return(response);
         } else {
             response = "Error 403";
@@ -303,6 +331,8 @@ std::string getErrorReturn(std::string path){
     }
     return(content);
 }
+
+
 
 std::string Response::errorType(std::string erro){
     std::string body;

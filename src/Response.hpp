@@ -32,7 +32,7 @@ class Response {
 		static std::string  getResponseFile(std::string responseRequestFilePath, Server &web, std::string RequestPathResource);
 		static std::string  responseRequest(Server &web, std::string RequestPathResource);
 		static void addIndex(Server &web, std::string &path);
-		static std::string  createResponseMessage(std::string body);
+		static std::string  createResponseMessage(Server &web, std::string body);
 		std::string deleteResponse(Server &web, std::string pathToDelete);
 		static std::string createResponseMessageWithError(std::string body, std::string erro, std::string messageErro);
 		static std::string errorType(std::string erro);

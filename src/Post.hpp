@@ -52,7 +52,7 @@ class Post {
 		void		handleBoundary(std::string fullRequestPathResource);
 		std::string	handleCgi(const std::string &fullRequestPathResource, Server &web, std::string &header);
 		void		execCgi(const std::string &fullRequestPathResource, Server &web, int *pipefd, int *pipe2fd);
-		std::string	receiveOutput(int *pipefd, int *pipe2fd, pid_t pid);
+		std::string    receiveOutput(Server &web, int *pipefd, int *pipe2fd, pid_t pid);
 		void		getBoundaryHeaderData(std::vector<char> &body, std::size_t &bytesReadTotal, std::string &fullRequestPathResource);
 		void		handleBinary(const std::string &fullRequestPathResource);
 		void		getBinaryContentDisposition(std::string &fullRequestPathResource, std::string &header);

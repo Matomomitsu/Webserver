@@ -309,7 +309,7 @@ void    Post::execCgi(const std::string &fullRequestPathResource, Server &web, i
     }
 }
 
-std::string    Post::receiveOutput(int *pipefd, int *pipe2fd, pid_t pid)
+std::string    Post::receiveOutput(Server &web, int *pipefd, int *pipe2fd, pid_t pid)
 {
     char buffer[1024];
     std::string output;
@@ -340,7 +340,7 @@ std::string    Post::receiveOutput(int *pipefd, int *pipe2fd, pid_t pid)
     }
     close(pipefd[0]);
     waitpid(pid, &status, 0);
-    output = Response::createResponseMessage(output);
+    output = Response::createResponseMessage(web, output);
     return output;
 }
 
@@ -366,7 +366,7 @@ std::string Post::handleCgi(const std::string &fullRequestPathResource, Server &
     if (pid == 0)
         this->execCgi(fullRequestPathResource, web, pipefd, pipe2fd);
     else if (pid > 0)
-        return (this->receiveOutput(pipefd, pipe2fd, pid));
+        return (this->receiveOutput(web, pipefd, pipe2fd, pid));
     else
         std::cerr << "Fork error\n";
     return "Error 400";
