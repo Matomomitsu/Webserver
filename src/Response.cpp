@@ -98,9 +98,11 @@ std::string  Response::findLocationRoot(Server &web, std::string RequestPathReso
                 size_t  findContentTypeReturn;
                 web.contentType = "";
                 web.pathSegments = splitPath(RequestPathResource, '/');
-                findContentTypeReturn = web.pathSegments[web.pathSegments.size() - 1].rfind(".");
-                if (findContentTypeReturn != std::string::npos)
-                    web.contentType = web.pathSegments[web.pathSegments.size() - 1].substr(findContentTypeReturn + 1);
+                if (!web.pathSegments.empty()){
+                    findContentTypeReturn = web.pathSegments[web.pathSegments.size() - 1].rfind(".");
+                    if (findContentTypeReturn != std::string::npos)
+                        web.contentType = web.pathSegments[web.pathSegments.size() - 1].substr(findContentTypeReturn + 1);
+                }
             }
             if (web.locationRoot.empty())
                 web.locationRoot = checkLocationRoot(web.pathSegments, outerIt->second, web);
