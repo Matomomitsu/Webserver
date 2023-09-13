@@ -209,7 +209,6 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
             limitExcept = web.getItemFromLocationMap(web, "Server " + web.hostMessageReturn, "limit_except " + web.locationPath);
         if (limitExcept == "wrong")
             limitExcept = "POST DELETE GET";
-
         if (header.substr(0, 6) == "DELETE" && (limitExcept.find("DELETE") != std::string::npos)){
             http_response = responsed.deleteResponse(web, web.getPathResource);
             checkResponse = Response::errorType(http_response);

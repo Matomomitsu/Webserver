@@ -6,7 +6,7 @@
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/25 20:02:59 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/09/11 20:29:30 by mtomomit         ###   ########.fr       */
+/*   Updated: 2023/09/13 17:43:23 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,12 +52,13 @@ class Post {
 		void		handleBoundary(std::string fullRequestPathResource);
 		std::string	handleCgi(const std::string &fullRequestPathResource, Server &web, std::string &header);
 		void		execCgi(const std::string &fullRequestPathResource, Server &web, int *pipefd, int *pipe2fd);
-		std::string    receiveOutput(Server &web, int *pipefd, int *pipe2fd, pid_t pid);
+		std::string	receiveOutput(Server &web, int *pipefd, int *pipe2fd, pid_t pid);
 		void		getBoundaryHeaderData(std::vector<char> &body, std::size_t &bytesReadTotal, std::string &fullRequestPathResource);
 		void		handleBinary(const std::string &fullRequestPathResource);
 		void		getBinaryContentDisposition(std::string &fullRequestPathResource, std::string &header);
 		void		copyToFile(const std::string &fullRequestPathResource, std::size_t limiter, std::vector<char> &body);
 		std::string	createResponseMessage(std::string &fullRequestPathResource);
+		void		getContentTypeDataCGI(std::string &header);
 
 		class	BadRequest : public std::exception{
 			public:

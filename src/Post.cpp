@@ -6,7 +6,7 @@
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/25 20:02:57 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/09/12 19:24:32 by mtomomit         ###   ########.fr       */
+/*   Updated: 2023/09/13 19:02:06 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -288,13 +288,29 @@ std::string  Post::createResponseMessage(std::string &fullRequestPathResource){
     return(response);
 }
 
+void Post::getContentTypeDataCGI(std::string &header)
+{
+    std::size_t findContent;
+
+    findContent = header.find("Content-Type: ");
+    if (findContent != std::string::npos)
+        contentType = header.substr(findContent);
+    else
+        throw UnsupportedMediaType();
+    contentType = contentType.substr(0, contentType.find("\r\n"));
+    contentType = contentType.substr(14);
+}
+
 void    Post::execCgi(const std::string &fullRequestPathResource, Server &web, int *pipefd, int *pipe2fd)
 {
     std::string cLength;
     std::string cType;
+    std::string fullPath;
 
     cLength = "CONTENT_LENGTH=" + Request::itoa(this->contentLength);
     cType = "CONTENT_TYPE=" + this->contentType;
+    fullPath = "PATH_INFO=" + fullRequestPathResource;
+
     close(pipefd[0]);
     close(pipe2fd[1]);
     dup2(pipefd[1], STDOUT_FILENO);
@@ -302,7 +318,7 @@ void    Post::execCgi(const std::string &fullRequestPathResource, Server &web, i
     close(pipe2fd[0]);
     close(pipefd[1]);
     char* argv[] = { (char*)web.cgiInit.c_str(), (char*)fullRequestPathResource.c_str(), NULL };
-    char* envp[] = { (char *)web.queryString.c_str(), (char *)"REQUEST_METHOD=POST", (char *)cLength.c_str(), (char *)cType.c_str(), NULL};
+    char* envp[] = { (char *)web.queryString.c_str(), (char *)"REQUEST_METHOD=POST", (char *)cLength.c_str(), (char *)cType.c_str(), (char *)fullPath.c_str(), NULL};
     if (execve(web.cgiInit.c_str(), argv, envp) == -1) {
         std::cerr << "Execve error: " << std::strerror(errno) << '\n';
         exit(1);
@@ -322,17 +338,18 @@ std::string    Post::receiveOutput(Server &web, int *pipefd, int *pipe2fd, pid_t
     std::string contentTypeOutput;
     size_t      findContentTypeOutput;
 
+    close(pipe2fd[0]);
     while (bytesReadTotal != contentLength){
         bytesReadInt = recv(clientSock, vecBuffer.data(), vecBuffer.size() - 1, 0);
         if (bytesReadInt != -1)
         {
             bytesReadTotal += bytesReadInt;
             body.insert(body.end(), vecBuffer.begin(), vecBuffer.begin() + bytesReadInt);
+            write(pipe2fd[1], body.data(), body.size());
+            body.clear();
         }
 
     }
-    close(pipe2fd[0]);
-    write(pipe2fd[1], body.data(), body.size());
     close(pipe2fd[1]);
     close(pipefd[1]);
     while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer) - 1)) > 0)
@@ -362,8 +379,11 @@ std::string Post::handleCgi(const std::string &fullRequestPathResource, Server &
     pid_t pid;
 
     try{
-        this->getContentTypeData(header);
+        this->getContentTypeDataCGI(header);
         this->getLength(header, web);
+        if (contentType != "application/x-www-form-urlencoded" && contentType != "text/plain" && \
+            contentType != "application/json" && contentType.substr(0, 19) != "multipart/form-data")
+            throw UnsupportedMediaType();
     }
     catch(std::exception &e){
         std::cout << e.what() << std::endl;
@@ -403,10 +423,10 @@ std::string Post::postResponse(Server &web, std::string RequestPathResource, std
     try{
         this->getContentTypeData(header);
         this->getLength(header, web);
-        std::cout << contentLength << std::endl;
         if (contentLength == 0)
         {
-            throw LengthRequired();
+            if (transferEncoding != "chunked")
+                throw LengthRequired();
         }
         if (this->contentType == "multipart/form-data")
             this->handleBoundary(fullRequestPathResource);

@@ -2,10 +2,11 @@
 @import url('https://fonts.googleapis.com/css?family=Catamaran:400,800');
 .error-container {
   text-align: center;
-  font-size: 180px;
+  font-size: 190px;
   font-family: 'Catamaran', sans-serif;
   font-weight: 800;
-  margin: 20px 15px;
+  margin-top: 40px;
+  margin-bottom: 0px;
 }
 .error-container > span {
   display: inline-block;
@@ -137,9 +138,11 @@ html, button, input, select, textarea {
     font-family: 'Montserrat', Helvetica, sans-serif;
     color: #92a4ad;
 }
-h1 {
+h2 {
   text-align: center;
-  margin: 30px 15px;
+  font-size: 28px;
+  margin-top: 0px;
+  margin-bottom: 0px;
 }
 .zoom-area {
   max-width: 490px;
