@@ -1,0 +1,39 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Requisição GET</title>
+</head>
+<body>
+    <h1>Exemplo de Requisição GET</h1>
+    
+    <button id="meuBotao">Clique para fazer a requisição GET</button>
+
+    <script>
+        // Adicione um ouvinte de evento de clique ao botão
+        document.getElementById('meuBotao').addEventListener('click', function() {
+            // URL para o servidor que você deseja fazer a requisição GET
+            var url = '127.0.0.1:3490/testes/teste.html';
+
+            // Criação de um objeto XMLHttpRequest para fazer a requisição
+            var xhr = new XMLHttpRequest();
+
+            // Configura a requisição GET
+            xhr.open('GET', url, true);
+
+            // Define uma função para ser executada quando a requisição for concluída
+            xhr.onreadystatechange = function() {
+                // Verifica se a requisição foi concluída e se o status HTTP é 200 (OK)
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    // A resposta do servidor está disponível em xhr.responseText
+                    alert('Requisição GET bem-sucedida! Resposta do servidor:\n\n' + xhr.responseText);
+                }
+            };
+
+            // Envia a requisição
+            xhr.send();
+        });
+    </script>
+</body>
+</html>
