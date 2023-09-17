@@ -203,6 +203,7 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
 			printf("message in format\n");
         //else
             //fazer exceção
+        web.checkAutoIndexActive(web);
         if (web.locationPath.empty())
             limitExcept = web.getItemFromServerMap(web, "Server " + web.hostMessageReturn, "limit_except");
         else

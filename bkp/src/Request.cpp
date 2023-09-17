@@ -190,7 +190,7 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
 
 	if (bytesRead > 0)
 	{
-        
+
         header += buffer;
         while (header.find("\r\n\r\n") == std::string::npos && bytesRead != -1)
         {

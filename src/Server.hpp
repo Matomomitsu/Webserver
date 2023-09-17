@@ -28,6 +28,7 @@ class Server{
         std::string contentType;
         std::vector<std::string> pathSegments;
         bool containsCgi;
+        bool autoindex;
         std::string cgiInit;
         std::string queryString;
 
@@ -36,6 +37,7 @@ class Server{
         std::string getItemFromLocationMap(Server &web, std::string chavePrincipal, std::string chaveSecundaria);
         bool  checkType( const std::string& requestMessage);
         std::string getRequestPathFile(void);
+        void checkAutoIndexActive(Server &web);
 
     private:
 };

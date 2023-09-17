@@ -2,14 +2,15 @@ server {
 	listen 127.0.0.1:15020;
 	server_name www.localhost.com localhost.com;
 	root .;
-	index index.html index.gzip;
+	index index.html index.php;
 	error_page 404 /index.html;
 	error_page 405 /custom_405.html;
 	cgi .php php-cgi;
 	cgi .py python3;
+	autoindex on;
 	location /put {
 		limit_except POST DELETE;
-		index index.html index.gzip;
+		index index.html index.php;
 		root ./pute;
 	}
 	location /delete {
@@ -17,8 +18,6 @@ server {
 		root /test/www/delete;
 	}
 }
-
-
 
 server {
 	listen 127.0.0.1:3490;
@@ -30,6 +29,7 @@ server {
 	timeout 50;
 	cgi .php php-cgi .bataaaaaataaa;
 	cgi .py python3;
+	autoindex on;
 	location / {dasdasd
 		limit_except GET;dasdasd
 		client_max_body_size 10000;

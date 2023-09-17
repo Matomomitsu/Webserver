@@ -3,6 +3,16 @@
 # include "./Webserver.hpp"
 # include "./Request.hpp"
 
+void Server::checkAutoIndexActive(Server &web){
+    std::string checkAutoindex = web.getItemFromServerMap(web, "Server "+web.hostMessageReturn, "autoindex");
+    if(checkAutoindex == "on"){
+        web.autoindex = true;
+    }
+    else
+        web.autoindex = false;
+}
+
+
 std::string Server::getRequestPathFile(void){
     return (this->getPathResource);
 }

@@ -115,6 +115,8 @@ Server Parser::parserFile(std::string inputFilePath) {
                     serverMap[ipFromServer]["ip"] =  ip;
                     serverMap[ipFromServer]["port"] = port;
                 }
+                else if (line.substr(0, 10) == "autoindex ")
+                    serverMap[ipFromServer]["autoindex"] =  getValuesFromArchvie(line);
                 else if (line.substr(0, 12) == "server_name ")
                     serverMap[ipFromServer]["server_name"] =  getValuesFromArchvie(line);
                 else if (line.substr(0, 5) == "root " && !insideLocationBlock)

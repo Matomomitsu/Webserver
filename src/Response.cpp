@@ -95,7 +95,7 @@ std::string returnContenType(std::string contentType){
     std::vector<std::string> contentTypes;
     if (!file) {
         std::cerr << "Erro ao abrir o arquivo." << std::endl;
-        return ""; // Retorna uma string vazia em caso de erro
+        return "text/plain"; // Retorna uma string vazia em caso de erro
     }
     std::string line;
     while (std::getline(file, line)) {
@@ -149,6 +149,35 @@ std::string  Response::findLocationRoot(Server &web, std::string RequestPathReso
     return(RequestPathResource);
 }
 
+std::string listDirectoriesAsButtons(Server &web, std::string& directoryPath) {
+    std::string responseDirectory;
+
+    responseDirectory += "<html><head><title>Lista de Diretórios</title></head><body>";
+
+    DIR* dir;
+    struct dirent* entry;
+    if ((dir = opendir(directoryPath.c_str())) != NULL) {
+        while ((entry = readdir(dir)) != NULL) {
+            //if (entry->d_type == DT_DIR) {
+                if (std::string(entry->d_name) != "." && std::string(entry->d_name) != "..") {
+                    responseDirectory = responseDirectory + "<form action=\"" + web.getPathResource + "/" + entry->d_name + "\">"
+                           + "<input type=\"submit\" value=\"" + entry->d_name + "\"/>"
+                           + "</form>";
+                }
+            //}
+        }
+        closedir(dir);
+    }
+    else{
+        return("");
+    }
+
+    responseDirectory += "</body></html>";
+
+    return(responseDirectory);
+}
+
+
 void Response::addIndex(Server &web, std::string &path){
     std::string currentPath;
     std::string matchingLocationPath;
@@ -193,6 +222,14 @@ void Response::addIndex(Server &web, std::string &path){
 }
 
 std::string  Response::getResponseFile(std::string responseRequestFilePath, Server &web, std::string RequestPathResource){
+    if (web.autoindex)
+    {
+        std::string directoryReturn = listDirectoriesAsButtons(web, responseRequestFilePath);
+        if (directoryReturn != ""){
+            web.contentType = "html";
+            return(createResponseMessage(web, directoryReturn));
+        }
+    }
     addIndex(web, responseRequestFilePath);
     std::ifstream file(responseRequestFilePath.c_str());
     std::string content;

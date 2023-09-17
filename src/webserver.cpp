@@ -8,5 +8,6 @@ void run(Server &web){
     std::string port;
 
     web.containsCgi = false;
-    //web.printMap(web.locationMap);
+    web.autoindex = false;
+    //web.printMap(web.serverMap);
 }
