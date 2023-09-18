@@ -7,7 +7,7 @@
             document.getElementById('uploadForm').addEventListener('submit', function(event) {
                 event.preventDefault();
                 var formData = new FormData(event.target);
-                fetch('../put', {
+                fetch('../utils/uploaded/', {
                     method: 'POST',
                     body: formData
                 }).then(response => {
