@@ -1,4 +1,14 @@
-import cgi, cgitb
+import cgi
+import cgitb
+import signal
+import sys
+
+def handler(signum, frame):
+    print ('Script took too long - Exiting...')
+    sys.exit(1)
+
+signal.signal(signal.SIGALRM, handler)
+signal.setitimer(signal.ITIMER_REAL, 5)
 
 form = cgi.FieldStorage()
 

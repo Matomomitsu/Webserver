@@ -216,7 +216,7 @@ std::string CGI::handleCgi(const std::string &fullRequestPathResource, Server &w
                 contentType.substr(0, 32) != "CONTENT_TYPE=multipart/form-data")
                 throw UnsupportedMediaType();
             body = handlePost(bytesReadInt);
-            if (bytesReadInt < 1)
+            if (bytesReadInt < 0)
                 throw InternalServerError();
         }
     }

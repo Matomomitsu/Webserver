@@ -40,6 +40,7 @@ void    Request::getCgiPath(Server &web)
 
 bool  Request::checkGetRequest( Server &web, const std::string& message, std::string method)
 {
+    web.method = method;
     //Encontra alinha inicial e final
     size_t startLine = message.find(method);
     //size_t endLine = message.find("\r\n", startLine);
@@ -197,6 +198,7 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
 
 	if (bytesRead > 0)
 	{
+        web.cgi.clientSock = client_sock;
         header += buffer;
         while (header.find("\r\n\r\n") == std::string::npos && bytesRead != -1)
         {
@@ -219,17 +221,17 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
             limitExcept = "POST DELETE GET";
         if (header.substr(0, 6) == "DELETE" && (limitExcept.find("DELETE") != std::string::npos)){
             http_response = responsed.deleteResponse(web, web.getPathResource);
-            checkResponse = Response::errorType(http_response);
+            checkResponse = Response::errorType(http_response, web);
             if(checkResponse != "OK")
-                http_response = Response::errorType(http_response);
+                http_response = Response::errorType(http_response, web);
         }
         else if (header.substr(0, 3) == "GET" && (limitExcept.find("GET") != std::string::npos))
         {
 		    pathGetRequestFile = web.getRequestPathFile();
-		    http_response = Response::responseRequest(web, pathGetRequestFile);
-            checkResponse = Response::errorType(http_response);
+		    http_response = Response::responseRequest(web, pathGetRequestFile, header);
+            checkResponse = Response::errorType(http_response, web);
             if(checkResponse != "OK")
-                http_response = Response::errorType(http_response);
+                http_response = Response::errorType(http_response, web);
         }
         else if (header.substr(0, 4) == "POST" && (limitExcept.find("POST") != std::string::npos))
         {
@@ -237,12 +239,12 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
             post.clientSock = client_sock;
             pathGetRequestFile = web.getRequestPathFile();
             http_response = post.postResponse(web, pathGetRequestFile, header);
-            checkResponse = Response::errorType(http_response);
+            checkResponse = Response::errorType(http_response, web);
             if(checkResponse != "OK")
-                http_response = Response::errorType(http_response);
+                http_response = Response::errorType(http_response, web);
         }
         else{
-            http_response = Response::errorType("Error 405");
+            http_response = Response::errorType("Error 405", web);
         }
         int bytesSend;
         bytesSend = send(client_sock, http_response.c_str(), http_response.length(), 0);

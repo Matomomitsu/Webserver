@@ -224,12 +224,12 @@ std::string  Response::getResponseFile(std::string responseRequestFilePath, Serv
     return (response);
 }
 
-std::string  Response::responseRequest(Server &web, std::string RequestPathResource){
+std::string  Response::responseRequest(Server &web, std::string RequestPathResource, std::string &header){
     std::string fullRequestPathResource;
 
     fullRequestPathResource = findLocationRoot(web, RequestPathResource);
     if(web.containsCgi)
-        return(web.cgi.handleCgi(fullRequestPathResource, web));
+        return(web.cgi.handleCgi(fullRequestPathResource, web, header));
     std::map<std::string, std::string> keyValueMap;
     std::string response;
     response = getResponseFile(fullRequestPathResource, web, RequestPathResource);
@@ -331,10 +331,13 @@ std::string getErrorReturn(std::string path){
 
 
 
-std::string Response::errorType(std::string erro){
+std::string Response::errorType(std::string erro, Server &web){
     std::string body;
     std::string content;
 
+
+    if (erro.substr(0, 5) == "Error")
+        web.connection = "close";
     if (erro == "Error 404"){
         body = getErrorReturn("./utils/error_page/404.html");
         content = Response::createResponseMessageWithError(body, "404", "Not Found");
@@ -368,6 +371,11 @@ std::string Response::errorType(std::string erro){
     else if(erro == "Error 405"){
         body = getErrorReturn("./utils/error_page/405.html");
         content = Response::createResponseMessageWithError(body, "405", "Method Not Allowed");
+        return (content);
+    }
+    else if(erro == "Error 500"){
+        body = getErrorReturn("./utils/error_page/500.html");
+        content = Response::createResponseMessageWithError(body, "500", "Internal Server Error");
         return (content);
     }
     else{

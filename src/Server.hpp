@@ -16,6 +16,10 @@
 # include <unistd.h>
 # include <string>
 # include <dirent.h>
+# include "CGI.hpp"
+
+class CGI;
+
 
 class Server{
     public:
