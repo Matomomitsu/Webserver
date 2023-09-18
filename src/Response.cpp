@@ -7,51 +7,6 @@ std::string itoa(int num) {
 	return oss.str();
 }
 
-std::string handleCgi(const std::string &fullRequestPathResource, Server &web)
-{
-    int pipefd[2];
-    pid_t pid;
-
-    if (web.cgiInit == ""){
-        return ("Error 400");
-    }
-    pipe(pipefd);
-    pid = fork();
-    if (pid == 0){
-        close(pipefd[0]);
-        dup2(pipefd[1], STDOUT_FILENO);
-        close(pipefd[1]);
-        char* argv[] = { (char*)web.cgiInit.c_str(), (char*)fullRequestPathResource.c_str(), NULL };
-        char* envp[] = { (char *)web.queryString.c_str(), NULL};
-        if (execve(web.cgiInit.c_str(), argv, envp) == -1) {
-            std::cerr << "Execve error: " << std::strerror(errno) << '\n';
-            exit(1);
-        }
-    }
-    else if (pid > 0){
-        char buffer[1024];
-        std::string body;
-        ssize_t bytesRead;
-        int status;
-
-        close(pipefd[1]);
-        while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer) - 1)) > 0)
-        {
-            buffer[bytesRead] = '\0';
-            body += buffer;
-        }
-        close(pipefd[0]);
-        waitpid(pid, &status, 0);
-        body = Response::createResponseMessage(web, body);
-        return body;
-    }
-    else {
-        std::cerr << "Fork error\n";
-        return "Error 400";
-    }
-    return "Error 400";
-}
-
 std::string Response::checkLocationRoot(const std::vector<std::string>& webPathSegments, std::map <std::string, std::string>& location, Server &web) {
     std::string currentPath;
     std::string matchingLocationPath;
@@ -274,7 +229,7 @@ std::string  Response::responseRequest(Server &web, std::string RequestPathResou
 
     fullRequestPathResource = findLocationRoot(web, RequestPathResource);
     if(web.containsCgi)
-        return(handleCgi(fullRequestPathResource, web));
+        return(web.cgi.handleCgi(fullRequestPathResource, web));
     std::map<std::string, std::string> keyValueMap;
     std::string response;
     response = getResponseFile(fullRequestPathResource, web, RequestPathResource);

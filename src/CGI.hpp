@@ -1,17 +1,17 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Post.hpp                                           :+:      :+:    :+:   */
+/*   CGI.hpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/08/25 20:02:59 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/09/17 20:47:32 by mtomomit         ###   ########.fr       */
+/*   Created: 2023/09/13 21:20:09 by mtomomit          #+#    #+#             */
+/*   Updated: 2023/09/17 19:17:27 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef POST_HPP
-# define POST_HPP
+#ifndef CGI_HPP
+# define CGI_HPP
 
 # include <iostream>
 # include <vector>
@@ -32,29 +32,23 @@
 # include <algorithm>
 # include <sys/types.h>
 # include <sys/wait.h>
-# include "Server.hpp"
-# include "Response.hpp"
 
-class Post {
+class Server;
+
+class CGI {
 	public:
 		std::string	contentType;
-		std::string	mainBoundary;
-		std::string	contentDisposition;
-		std::string	filename;
 		std::size_t	contentLength;
-		std::string	transferEncoding;
 		int			clientSock;
-		std::string	postResponse(Server &web, std::string RequestPathResource, std::string header);
-		void		getContentTypeData(std::string &header);
-		void		getLength(std::string header, Server &web);
-		void 		getTransferEncoding(std::string header);
-		void		getFileData(std::vector<char>::iterator &findBoundary, std::vector<char> &body, std::vector<char> &buffer, size_t &bytesReadTotal, int &bytesRead);
-		void		handleBoundary(std::string fullRequestPathResource);
-		void		getBoundaryHeaderData(std::vector<char> &body, std::size_t &bytesReadTotal, std::string &fullRequestPathResource);
-		void		handleBinary(const std::string &fullRequestPathResource);
-		void		getBinaryContentDisposition(std::string &fullRequestPathResource, std::string &header);
-		void		copyToFile(const std::string &fullRequestPathResource, std::size_t limiter, std::vector<char> &body);
-		std::string	createResponseMessage(std::string &fullRequestPathResource);
+		std::string	transferEncoding;
+
+		void				getContentType(std::string &header);
+		void				getLength(std::string &header, Server &web);
+		void				getTransferEncoding(std::string &header);
+		std::string			handleCgi(const std::string &fullRequestPathResource, Server &web, std::string &header);
+		std::vector<char>	handlePost(int &bytesReadInt);
+		void				execCgi(const std::string &fullRequestPathResource, Server &web, int *pipefd, int *pipe2fd);
+		std::string			receiveOutput(Server &web, int *pipefd, int *pipe2fd, pid_t &pid, std::vector<char> &body);
 
 		class	BadRequest : public std::exception{
 			public:
@@ -89,5 +83,8 @@ class Post {
 	private:
 
 };
+
+
+
 
 #endif

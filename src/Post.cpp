@@ -6,7 +6,7 @@
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/25 20:02:57 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/09/13 19:02:06 by mtomomit         ###   ########.fr       */
+/*   Updated: 2023/09/17 20:46:58 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -111,7 +111,7 @@ void Post::getBoundaryHeaderData(std::vector<char> &body, std::size_t &bytesRead
     std::size_t findFilename;
     std::string header;
     char        buffer[2];
-    int         bytesRead;
+    int         bytesRead = 1;
     std::vector<char>::iterator headerEnd;
     std::vector<char> doubleCRLF;
 
@@ -120,14 +120,18 @@ void Post::getBoundaryHeaderData(std::vector<char> &body, std::size_t &bytesRead
     doubleCRLF.push_back('\r');
     doubleCRLF.push_back('\n');
     headerEnd = std::search(body.begin(), body.end(), doubleCRLF.begin(), doubleCRLF.end());
-    while (headerEnd == body.end())
+    while (headerEnd == body.end() && bytesRead > 0)
     {
         bytesRead = recv(clientSock, buffer, sizeof(buffer) - 1, 0);
-        bytesReadTotal += bytesRead;
-        buffer[bytesRead] = 0;
-        body.insert(body.end(), buffer, buffer + bytesRead);
-        headerEnd = std::search(body.begin(), body.end(), doubleCRLF.begin(), doubleCRLF.end());
+        if (bytesRead > 0){
+            bytesReadTotal += bytesRead;
+            buffer[bytesRead] = 0;
+            body.insert(body.end(), buffer, buffer + bytesRead);
+            headerEnd = std::search(body.begin(), body.end(), doubleCRLF.begin(), doubleCRLF.end());
+        }
     }
+    if (headerEnd == body.end())
+        throw InternalServerError();
     std::vector<char> contentDispositionMarker;
     initializeContentDispositionMarker(contentDispositionMarker);
     findContentDisposition = std::search(body.begin(), body.end(), contentDispositionMarker.begin(), contentDispositionMarker.end()) - body.begin();
@@ -172,25 +176,26 @@ void Post::copyToFile(const std::string &fullRequestPathResource, std::size_t li
 void    Post::getFileData(std::vector<char>::iterator &findBoundary, std::vector<char> &body, std::vector<char> &buffer, size_t &bytesReadTotal, int &bytesRead)
 {
     std::vector<char> mainBoundaryVec(mainBoundary.begin(), mainBoundary.end());
-
-        size_t  bytesReadFile;
+    size_t  bytesReadFile;
 
     bytesReadFile = bytesRead;
-    while (findBoundary == body.end())
+    while (findBoundary == body.end() && bytesRead > 0)
     {
         bytesRead = recv(clientSock, buffer.data(), buffer.size() - 1, 0);
-        if (bytesRead != -1)
+        if (bytesRead > 0)
         {
             buffer[bytesRead] = 0;
             bytesReadTotal += bytesRead;
             bytesReadFile += bytesRead;
             body.insert(body.end(), buffer.begin(), buffer.begin() + bytesRead);
+            if (bytesReadFile > mainBoundaryVec.size())
+                findBoundary = std::search(body.begin() + bytesReadFile - mainBoundaryVec.size() - 4, body.end(), mainBoundaryVec.begin(), mainBoundaryVec.end());
+            else
+                findBoundary = std::search(body.begin(), body.end(), mainBoundaryVec.begin(), mainBoundaryVec.end());
         }
-        if (bytesReadFile > mainBoundaryVec.size())
-            findBoundary = std::search(body.begin() + bytesReadFile - mainBoundaryVec.size() - 4, body.end(), mainBoundaryVec.begin(), mainBoundaryVec.end());
-        else
-            findBoundary = std::search(body.begin(), body.end(), mainBoundaryVec.begin(), mainBoundaryVec.end());
     }
+    if (findBoundary == body.end())
+        throw InternalServerError();
 }
 
 void Post::handleBoundary(std::string fullRequestPathResource)
@@ -199,8 +204,8 @@ void Post::handleBoundary(std::string fullRequestPathResource)
     std::vector<char> body;
     int bytesRead = 0;
     bytesRead = recv(clientSock, buffer.data(), buffer.size() - 1, 0);
-    while (bytesRead == -1)
-        bytesRead = recv(clientSock, buffer.data(), buffer.size() - 1, 0);
+    if (bytesRead <= 0)
+        throw InternalServerError();
     size_t bytesReadTotal = bytesRead;
     std::vector<char>::iterator findBoundary;
 
@@ -264,12 +269,12 @@ void Post::handleBinary(const std::string &fullRequestPathResource)
 {
     std::vector<char> buffer(1024);
     std::vector<char> body;
-    int bytesRead = 0;
+    int bytesRead = 1;
     size_t bytesReadTotal = 0;
 
-    while (bytesReadTotal != contentLength){
+    while (bytesReadTotal != contentLength && bytesRead > 0){
         bytesRead = recv(clientSock, buffer.data(), buffer.size() - 1, 0);
-        if (bytesRead != -1)
+        if (bytesRead > 0)
         {
             bytesReadTotal += bytesRead;
             body.insert(body.end(), buffer.begin(), buffer.begin() + bytesRead);
@@ -277,6 +282,8 @@ void Post::handleBinary(const std::string &fullRequestPathResource)
             body.clear();
         }
     }
+    if (bytesReadTotal != contentLength)
+        throw InternalServerError();
 }
 
 std::string  Post::createResponseMessage(std::string &fullRequestPathResource){
@@ -288,122 +295,6 @@ std::string  Post::createResponseMessage(std::string &fullRequestPathResource){
     return(response);
 }
 
-void Post::getContentTypeDataCGI(std::string &header)
-{
-    std::size_t findContent;
-
-    findContent = header.find("Content-Type: ");
-    if (findContent != std::string::npos)
-        contentType = header.substr(findContent);
-    else
-        throw UnsupportedMediaType();
-    contentType = contentType.substr(0, contentType.find("\r\n"));
-    contentType = contentType.substr(14);
-}
-
-void    Post::execCgi(const std::string &fullRequestPathResource, Server &web, int *pipefd, int *pipe2fd)
-{
-    std::string cLength;
-    std::string cType;
-    std::string fullPath;
-
-    cLength = "CONTENT_LENGTH=" + Request::itoa(this->contentLength);
-    cType = "CONTENT_TYPE=" + this->contentType;
-    fullPath = "PATH_INFO=" + fullRequestPathResource;
-
-    close(pipefd[0]);
-    close(pipe2fd[1]);
-    dup2(pipefd[1], STDOUT_FILENO);
-    dup2(pipe2fd[0], STDIN_FILENO);
-    close(pipe2fd[0]);
-    close(pipefd[1]);
-    char* argv[] = { (char*)web.cgiInit.c_str(), (char*)fullRequestPathResource.c_str(), NULL };
-    char* envp[] = { (char *)web.queryString.c_str(), (char *)"REQUEST_METHOD=POST", (char *)cLength.c_str(), (char *)cType.c_str(), (char *)fullPath.c_str(), NULL};
-    if (execve(web.cgiInit.c_str(), argv, envp) == -1) {
-        std::cerr << "Execve error: " << std::strerror(errno) << '\n';
-        exit(1);
-    }
-}
-
-std::string    Post::receiveOutput(Server &web, int *pipefd, int *pipe2fd, pid_t pid)
-{
-    char buffer[1024];
-    std::string output;
-    size_t bytesRead;
-    int status;
-    std::vector<char> vecBuffer(1024);
-    std::vector<char> body;
-    int bytesReadInt = 0;
-    size_t bytesReadTotal = 0;
-    std::string contentTypeOutput;
-    size_t      findContentTypeOutput;
-
-    close(pipe2fd[0]);
-    while (bytesReadTotal != contentLength){
-        bytesReadInt = recv(clientSock, vecBuffer.data(), vecBuffer.size() - 1, 0);
-        if (bytesReadInt != -1)
-        {
-            bytesReadTotal += bytesReadInt;
-            body.insert(body.end(), vecBuffer.begin(), vecBuffer.begin() + bytesReadInt);
-            write(pipe2fd[1], body.data(), body.size());
-            body.clear();
-        }
-
-    }
-    close(pipe2fd[1]);
-    close(pipefd[1]);
-    while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer) - 1)) > 0)
-    {
-        buffer[bytesRead] = '\0';
-        output += buffer;
-    }
-    close(pipefd[0]);
-    waitpid(pid, &status, 0);
-    if (status != 0)
-        return ("Error 400");
-    findContentTypeOutput = output.find("Content-Type");
-    if (findContentTypeOutput != std::string::npos){
-        contentTypeOutput = output.substr(findContentTypeOutput);
-        contentTypeOutput = contentTypeOutput.substr(0, contentTypeOutput.find("\r\n"));
-        web.contentType = contentTypeOutput.substr(contentTypeOutput.find(":") + 1);
-    }
-    output = output.substr(output.find("\r\n\r\n") + 4);
-    output = Response::createResponseMessage(web, output);
-    return output;
-}
-
-std::string Post::handleCgi(const std::string &fullRequestPathResource, Server &web, std::string &header)
-{
-    int pipefd[2];
-    int pipe2fd[2];
-    pid_t pid;
-
-    try{
-        this->getContentTypeDataCGI(header);
-        this->getLength(header, web);
-        if (contentType != "application/x-www-form-urlencoded" && contentType != "text/plain" && \
-            contentType != "application/json" && contentType.substr(0, 19) != "multipart/form-data")
-            throw UnsupportedMediaType();
-    }
-    catch(std::exception &e){
-        std::cout << e.what() << std::endl;
-        return (e.what());
-    }
-    if (web.cgiInit == "")
-        return ("Error 400");
-    pipe(pipefd);
-    pipe(pipe2fd);
-    pid = fork();
-    if (pid == 0)
-        this->execCgi(fullRequestPathResource, web, pipefd, pipe2fd);
-    else if (pid > 0)
-        return (this->receiveOutput(web, pipefd, pipe2fd, pid));
-    else
-        std::cerr << "Fork error\n";
-    return "Error 400";
-}
-
-
 std::string Post::postResponse(Server &web, std::string RequestPathResource, std::string header)
 {
     std::string fullRequestPathResource;
@@ -413,7 +304,7 @@ std::string Post::postResponse(Server &web, std::string RequestPathResource, std
     DIR* directory = opendir(fullRequestPathResource.c_str());
     if (!directory){
         if (web.containsCgi)
-            return (handleCgi(fullRequestPathResource, web, header));
+            return (web.cgi.handleCgi(fullRequestPathResource, web, header));
         else
             return ("Error 400");
     }
@@ -463,4 +354,8 @@ const char *Post::RequestEntityTooLarge::what() const throw(){
 
 const char *Post::UnsupportedMediaType::what() const throw(){
 	return ("Error 415");
+}
+
+const char *Post::InternalServerError::what() const throw(){
+	return ("Error 500");
 }

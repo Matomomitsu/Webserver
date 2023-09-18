@@ -26,9 +26,12 @@ class Server{
         std::string locationRoot;
         std::string locationPath;
         std::string contentType;
+        std::string connection;
+        std::string method;
         std::vector<std::string> pathSegments;
         bool containsCgi;
         bool autoindex;
+        CGI         cgi;
         std::string cgiInit;
         std::string queryString;
 

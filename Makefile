@@ -16,7 +16,8 @@ SOURCES = main.cpp \
     src/Epoll.cpp \
     src/Response.cpp \
     src/Request.cpp \
-    src/Post.cpp
+    src/Post.cpp \
+    src/CGI.cpp
 
 SRCS_PATH = ./
 SRCS = $(addprefix $(SRCS_PATH), $(SOURCES))
@@ -31,7 +32,8 @@ HEADER = src/Server.hpp \
     src/Epoll.hpp \
     src/Response.hpp \
     src/Request.hpp \
-    src/Post.hpp 
+    src/Post.hpp \
+    src/CGI.hpp
 
 all: $(NAME)
 

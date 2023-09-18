@@ -97,6 +97,13 @@ bool  Request::checkGetRequest( Server &web, const std::string& message, std::st
         std::cerr << "getaddrinfo() error" << std::endl;
         return false;
     }
+
+    std::string connectionType;
+
+    connectionType = message.substr(message.find("Connection: "));
+    connectionType = connectionType.substr(0, connectionType.find("\r\n\r\n"));
+    web.connection = connectionType.substr(12);
+
     struct sockaddr_in *ip = (struct sockaddr_in *)res->ai_addr;
     void *addr = &(ip->sin_addr);
     inet_ntop(res->ai_family, addr, ipstr, sizeof(ipstr));
@@ -237,16 +244,13 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
         else{
             http_response = Response::errorType("Error 405");
         }
-        send(client_sock, http_response.c_str(), http_response.length(), 0);
-        web.pathSegments.clear();
-        web.locationPath.clear();
-        web.locationRoot.clear();
-        web.cgiInit.clear();
-        web.containsCgi = false;
-        char maxbuffer[128];
-        while (bytesRead != -1){
-            bytesRead = recv(client_sock, maxbuffer, sizeof(maxbuffer) - 1, 0);
-            maxbuffer[bytesRead] = 0;
+        int bytesSend;
+        bytesSend = send(client_sock, http_response.c_str(), http_response.length(), 0);
+        if (web.connection == "close" || bytesSend <= 0){
+            std::cout << "Connection closed" << std::endl;
+            epoll_ctl(epoll->epoll_fd, EPOLL_CTL_DEL, client_sock, NULL);
+		    close(client_sock);
+		    clientSockets.remove(client_sock);
         }
 	}
 	else if (bytesRead == 0)
@@ -259,5 +263,8 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
 	else
 	{
 		std::cout << "Error occurred while receiving data" << std::endl;
+        epoll_ctl(epoll->epoll_fd, EPOLL_CTL_DEL, client_sock, NULL);
+		close(client_sock);
+		clientSockets.remove(client_sock);
 	}
 }
