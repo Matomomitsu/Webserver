@@ -115,9 +115,16 @@ std::string listDirectoriesAsButtons(Server &web, std::string& directoryPath) {
         while ((entry = readdir(dir)) != NULL) {
             //if (entry->d_type == DT_DIR) {
                 if (std::string(entry->d_name) != "." && std::string(entry->d_name) != "..") {
-                    responseDirectory = responseDirectory + "<form action=\"" + web.getPathResource + "/" + entry->d_name + "\">"
+                    if (web.getPathResource != "/"){
+                        responseDirectory = responseDirectory + "<form action=\"" + web.getPathResource + "/" + entry->d_name + "\">"
                            + "<input type=\"submit\" value=\"" + entry->d_name + "\"/>"
                            + "</form>";
+                    }
+                    else{
+                        responseDirectory = responseDirectory + "<form action=\" ./" + entry->d_name + "\">"
+                           + "<input type=\"submit\" value=\"" + entry->d_name + "\"/>"
+                           + "</form>";
+                    }
                 }
             //}
         }
