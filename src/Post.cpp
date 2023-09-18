@@ -6,7 +6,7 @@
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/25 20:02:57 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/09/17 20:46:58 by mtomomit         ###   ########.fr       */
+/*   Updated: 2023/09/18 13:57:16 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -315,10 +315,7 @@ std::string Post::postResponse(Server &web, std::string RequestPathResource, std
         this->getContentTypeData(header);
         this->getLength(header, web);
         if (contentLength == 0)
-        {
-            if (transferEncoding != "chunked")
-                throw LengthRequired();
-        }
+            throw LengthRequired();
         if (this->contentType == "multipart/form-data")
             this->handleBoundary(fullRequestPathResource);
         else
