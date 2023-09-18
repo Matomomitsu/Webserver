@@ -18,6 +18,11 @@ class Parser{
     public:
         std::string inputFileRead;
         Server parserFile(std::string inputFilePath);
+
+        class	InvalidFile : public std::exception{
+			public:
+				virtual const char *what() const throw();
+		};
     private:
 
 };

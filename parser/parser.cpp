@@ -112,6 +112,8 @@ Server Parser::parserFile(std::string inputFilePath) {
                     ip = getIpFromInputFile(line);
                     port = getPortFromInputFile(line);
                     ipFromServer = "Server " + ip+":"+port;
+                    if (serverMap[ipFromServer]["ip"]  != "")
+                        throw InvalidFile();
                     serverMap[ipFromServer]["ip"] =  ip;
                     serverMap[ipFromServer]["port"] = port;
                 }
@@ -168,4 +170,8 @@ Server Parser::parserFile(std::string inputFilePath) {
     serverInstance.locationMap = locationMap;
     arquivo.close();
     return serverInstance;
+}
+
+const char *Parser::InvalidFile::what() const throw(){
+	return ("Configuration file is invalid");
 }

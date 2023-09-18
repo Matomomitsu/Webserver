@@ -29,7 +29,6 @@ server {
 	timeout 50;
 	cgi .php php-cgi .bataaaaaataaa;
 	cgi .py python3;
-	autoindex on;
 	location / {dasdasd
 		limit_except GET;dasdasd
 		client_max_body_size 10000;

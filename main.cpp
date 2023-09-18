@@ -43,7 +43,13 @@ int main (int argc, char *argv[]){
     sigIntHandler.sa_flags = 0;
     sigaction(SIGINT, &sigIntHandler, NULL);
 
-    web = parser.parserFile(filePath.c_str());
+	try{
+		web = parser.parserFile(filePath.c_str());
+	}
+    catch(std::exception &e){
+		std::cerr << e.what() << std::endl;
+		return (1);
+	}
     run(web);
 	try{
 		sockets.createSockets(web, &epoll.event, epoll.epoll_fd);
