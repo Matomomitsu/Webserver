@@ -17,7 +17,8 @@ SOURCES = main.cpp \
     src/Response.cpp \
     src/Request.cpp \
     src/Post.cpp \
-    src/CGI.cpp
+    src/CGI.cpp \
+    src/Send.cpp
 
 SRCS_PATH = ./
 SRCS = $(addprefix $(SRCS_PATH), $(SOURCES))
@@ -33,7 +34,8 @@ HEADER = src/Server.hpp \
     src/Response.hpp \
     src/Request.hpp \
     src/Post.hpp \
-    src/CGI.hpp
+    src/CGI.hpp \
+    src/Send.hpp
 
 all: $(NAME)
 

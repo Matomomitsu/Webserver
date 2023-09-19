@@ -17,8 +17,11 @@
 # include <string>
 # include <dirent.h>
 # include "CGI.hpp"
+# include "Send.hpp"
+
 
 class CGI;
+class Send;
 
 
 class Server{

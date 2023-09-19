@@ -25,7 +25,7 @@
 class Request {
 	public:
 		static bool  checkGetRequest( Server &web, const std::string& message, std::string method);
-		static void handleClient(Server web, int client_sock, Epoll *epoll, std::list<int> clientSockets);
+		static void handleClient(Server web, int client_sock, Epoll *epoll, std::list<int> clientSockets, std::map<int, Send> &responses);
 		static std::string itoa(int num);
 		static std::string createErrorMessage(Server &web);
 		static void   getCgiPath(Server &web);

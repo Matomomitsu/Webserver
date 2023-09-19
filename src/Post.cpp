@@ -6,7 +6,7 @@
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/25 20:02:57 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/09/18 13:57:16 by mtomomit         ###   ########.fr       */
+/*   Updated: 2023/09/18 15:13:01 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -130,7 +130,7 @@ void Post::getBoundaryHeaderData(std::vector<char> &body, std::size_t &bytesRead
             headerEnd = std::search(body.begin(), body.end(), doubleCRLF.begin(), doubleCRLF.end());
         }
     }
-    if (headerEnd == body.end())
+    if (headerEnd == body.end() || bytesRead <= 0)
         throw InternalServerError();
     std::vector<char> contentDispositionMarker;
     initializeContentDispositionMarker(contentDispositionMarker);
@@ -194,7 +194,7 @@ void    Post::getFileData(std::vector<char>::iterator &findBoundary, std::vector
                 findBoundary = std::search(body.begin(), body.end(), mainBoundaryVec.begin(), mainBoundaryVec.end());
         }
     }
-    if (findBoundary == body.end())
+    if (findBoundary == body.end() || bytesRead <= 0)
         throw InternalServerError();
 }
 
@@ -282,7 +282,7 @@ void Post::handleBinary(const std::string &fullRequestPathResource)
             body.clear();
         }
     }
-    if (bytesReadTotal != contentLength)
+    if (bytesReadTotal != contentLength || bytesRead <= 0)
         throw InternalServerError();
 }
 

@@ -182,7 +182,7 @@ std::string Request::createErrorMessage(Server &web){
     return(content);
 }
 
-void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<int> clientSockets)
+void Request::handleClient(Server web, int clientSock, Epoll *epoll, std::list<int> clientSockets, std::map<int, Send> &responses)
 {
     Response responsed;
     std::string http_response;
@@ -192,19 +192,27 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
     std::string limitExcept;
     std::string checkResponse;
 	char buffer[2];
-	int bytesRead = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
+	int bytesRead = recv(clientSock, buffer, sizeof(buffer) - 1, 0);
 	buffer[bytesRead] = 0;
 
 
 	if (bytesRead > 0)
 	{
-        web.cgi.clientSock = client_sock;
+        web.cgi.clientSock = clientSock;
         header += buffer;
-        while (header.find("\r\n\r\n") == std::string::npos && bytesRead != -1)
+        while (header.find("\r\n\r\n") == std::string::npos && bytesRead > 0)
         {
-            bytesRead = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
-            buffer[bytesRead] = 0;
-            header += buffer;
+            bytesRead = recv(clientSock, buffer, sizeof(buffer) - 1, 0);
+            if (bytesRead > 0){
+                buffer[bytesRead] = 0;
+                header += buffer;
+            }
+        }
+        if (bytesRead <= 0)
+        {
+            http_response = Response::errorType("Error 500", web);
+            responses[clientSock].response = http_response;
+            responses[clientSock].connection = "close";
         }
 		std::cout << "Received message from client: " << header;
 
@@ -236,7 +244,7 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
         else if (header.substr(0, 4) == "POST" && (limitExcept.find("POST") != std::string::npos))
         {
             Post    post;
-            post.clientSock = client_sock;
+            post.clientSock = clientSock;
             pathGetRequestFile = web.getRequestPathFile();
             http_response = post.postResponse(web, pathGetRequestFile, header);
             checkResponse = Response::errorType(http_response, web);
@@ -246,27 +254,21 @@ void Request::handleClient(Server web, int client_sock, Epoll *epoll, std::list<
         else{
             http_response = Response::errorType("Error 405", web);
         }
-        int bytesSend;
-        bytesSend = send(client_sock, http_response.c_str(), http_response.length(), 0);
-        if (web.connection == "close" || bytesSend <= 0){
-            std::cout << "Connection closed" << std::endl;
-            epoll_ctl(epoll->epoll_fd, EPOLL_CTL_DEL, client_sock, NULL);
-		    close(client_sock);
-		    clientSockets.remove(client_sock);
-        }
+        responses[clientSock].response = http_response;
+        responses[clientSock].connection = web.connection;
 	}
 	else if (bytesRead == 0)
 	{
 		std::cout << "Client disconnected" << std::endl;
-		epoll_ctl(epoll->epoll_fd, EPOLL_CTL_DEL, client_sock, NULL);
-		close(client_sock);
-		clientSockets.remove(client_sock);
+		epoll_ctl(epoll->epoll_fd, EPOLL_CTL_DEL, clientSock, NULL);
+		close(clientSock);
+		clientSockets.remove(clientSock);
 	}
 	else
 	{
 		std::cout << "Error occurred while receiving data" << std::endl;
-        epoll_ctl(epoll->epoll_fd, EPOLL_CTL_DEL, client_sock, NULL);
-		close(client_sock);
-		clientSockets.remove(client_sock);
+        epoll_ctl(epoll->epoll_fd, EPOLL_CTL_DEL, clientSock, NULL);
+		close(clientSock);
+		clientSockets.remove(clientSock);
 	}
 }

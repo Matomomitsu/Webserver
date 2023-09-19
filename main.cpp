@@ -3,8 +3,6 @@
 #include "./src/Webserver.hpp"
 #include "./src/Sockets.hpp"
 #include "./src/Request.hpp"
-#include <signal.h>
-#include <cstdlib>
 
 /*void sigIntHandlerFunc(int sig){
     (void)sig;
@@ -26,11 +24,12 @@ std::string testeCaminhoDoRecurso;
 
 int main (int argc, char *argv[]){
 
-    Parser parser;
-    Server web;
+    Parser			parser;
+    Server			web;
     Sockets			sockets;
 	Epoll			epoll;
 	std::string 	filePath;
+	std::map<int, Send> responses;
 
     if(argc != 2)
     	filePath = "./input2.txt";
@@ -89,7 +88,31 @@ int main (int argc, char *argv[]){
 			{
 				if (events[i].events & EPOLLIN)
 				{
-					Request::handleClient(web, fd, &epoll, sockets.clientSockets);
+					Request::handleClient(web, fd, &epoll, sockets.clientSockets, responses);
+					if (std::find(sockets.clientSockets.begin(), sockets.clientSockets.end(), fd) != sockets.clientSockets.end()){
+						epoll.event.events =  EPOLLOUT;
+						epoll.event.data.fd = fd;
+						epoll_ctl(epoll.epoll_fd, EPOLL_CTL_MOD, fd, &epoll.event);
+					}
+					else{
+						responses[fd].connection.clear();
+						responses[fd].response.clear();
+					}
+				}
+				else if (events[i].events & EPOLLOUT)
+				{
+					responses[fd].sendResponse(fd, &epoll, sockets.clientSockets);
+					if (std::find(sockets.clientSockets.begin(), sockets.clientSockets.end(), fd) != sockets.clientSockets.end()){
+						epoll.event.events =  EPOLLIN;
+						epoll.event.data.fd = fd;
+						epoll_ctl(epoll.epoll_fd, EPOLL_CTL_MOD, fd, &epoll.event);
+					}
+				}
+				else if (events[i].events & (EPOLLERR | EPOLLHUP))
+				{
+					close(fd);
+					epoll_ctl(epoll.epoll_fd, EPOLL_CTL_DEL, fd, NULL);
+					sockets.clientSockets.remove(fd);
 				}
 			}
 		}
