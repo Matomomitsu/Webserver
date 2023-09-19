@@ -36,13 +36,14 @@ server {
 	timeout 50;
 	cgi .php php-cgi .bataaaaaataaa;
 	cgi .py python3;
-	location / {dasdasd
-		limit_except GET;dasdasd
-		client_max_body_size 10000;
+	location /utils/uploaded {
+		limit_except DELETE POST;
+		root ./utils/uploaded;
 	}
-	location /put {
-		limit_except PUT;
-		root /test/www;
+	location /utils {
+		limit_except GET POST DELETE;
+		index index.html index.php;
+		root ./utils;
 	}
 	location /delete {
 		limit_except DELETE;
