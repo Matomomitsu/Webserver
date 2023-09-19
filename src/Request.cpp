@@ -84,7 +84,7 @@ bool  Request::checkGetRequest( Server &web, const std::string& message, std::st
         std::cout << "Formato de Host inválido: " << hostValue << std::endl;
         return false;
     }
-
+    web.host = hostValue;
     std::string ipAddress = hostValue.substr(0, colonPos);
     std::string port = hostValue.substr(colonPos + 1);
     struct addrinfo hints = {}, *res;
@@ -213,13 +213,26 @@ void Request::handleClient(Server web, int clientSock, Epoll *epoll, std::list<i
             http_response = Response::errorType("Error 500", web);
             responses[clientSock].response = http_response;
             responses[clientSock].connection = "close";
+            return ;
         }
 		std::cout << "Received message from client: " << header;
 
-		if (web.checkType(header)) // Parte de validação da mensagem
+		if (web.checkType(header))
 			printf("message in format\n");
-        //else
-            //fazer exceção
+        else{
+            http_response = Response::errorType("Error 400", web);
+            responses[clientSock].response = http_response;
+            responses[clientSock].connection = "close";
+            return ;
+        }
+
+        http_response = web.checkRedirection(web);
+        if (http_response != ""){
+            responses[clientSock].response = http_response;
+            responses[clientSock].connection = web.connection;
+            return ;
+        }
+
         web.checkAutoIndexActive(web);
         if (web.locationPath.empty())
             limitExcept = web.getItemFromServerMap(web, "Server " + web.hostMessageReturn, "limit_except");

@@ -162,6 +162,8 @@ Server Parser::parserFile(std::string inputFilePath) {
                         locationMap[ipFromServer]["root "+locationPath] =  getValuesFromArchvie(line);
                     else if (line.substr(0, 6) == "index ")
                         locationMap[ipFromServer]["index "+locationPath] =  getValuesFromArchvie(line);
+                    else if (line.substr(0, 9) == "redirect ")
+                        locationMap[ipFromServer]["redirect "+locationPath] =  getValuesFromArchvie(line);
                 }
             }
         }

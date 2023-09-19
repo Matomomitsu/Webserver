@@ -12,6 +12,21 @@ void Server::checkAutoIndexActive(Server &web){
         web.autoindex = false;
 }
 
+std::string Server::checkRedirection(Server &web){
+    std::string checkRedirection = web.getItemFromLocationMap(web, "Server "+web.hostMessageReturn, "redirect " + web.locationPath);
+    std::string response;
+
+    if(checkRedirection == "wrong"){
+        return "";
+    }
+    else{
+        response = "HTTP/1.1 307 Temporary Redirect\r\n"
+                    "Location: http://" + web.host + checkRedirection + "\r\n"
+                    "Content-Length: 0\r\n\r\n";
+        return (response);
+    }
+}
+
 
 std::string Server::getRequestPathFile(void){
     return (this->getPathResource);

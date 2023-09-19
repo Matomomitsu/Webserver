@@ -30,6 +30,7 @@ class Server{
         std::map<std::string, std::map<std::string, std::string> > locationMap;
         std::string getPathResource;
         std::string hostMessageReturn;
+        std::string host;
         std::string locationRoot;
         std::string locationPath;
         std::string contentType;
@@ -48,6 +49,7 @@ class Server{
         bool  checkType( const std::string& requestMessage);
         std::string getRequestPathFile(void);
         void checkAutoIndexActive(Server &web);
+        std::string checkRedirection(Server &web);
 
     private:
 };

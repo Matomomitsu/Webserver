@@ -9,5 +9,5 @@ void run(Server &web){
 
     web.containsCgi = false;
     web.autoindex = false;
-    //web.printMap(web.serverMap);
+    //web.printMap(web.locationMap);
 }
