@@ -215,7 +215,6 @@ void Request::handleClient(Server web, int clientSock, Epoll *epoll, std::list<i
             responses[clientSock].connection = "close";
             return ;
         }
-		std::cout << "Received message from client: " << header;
 
 		if (web.checkType(header))
 			printf("message in format\n");
