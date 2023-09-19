@@ -32,7 +32,7 @@ int main (int argc, char *argv[]){
 	std::map<int, Send> responses;
 
     if(argc != 2)
-    	filePath = "./input2.txt";
+    	filePath = "./utils/input.txt";
 	else
 		filePath = argv[1];
 

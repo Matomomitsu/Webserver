@@ -100,15 +100,35 @@ bool  Request::checkGetRequest( Server &web, const std::string& message, std::st
     }
 
     std::string connectionType;
+    std::size_t findConnectionType;
 
-    connectionType = message.substr(message.find("Connection: "));
-    connectionType = connectionType.substr(0, connectionType.find("\r\n\r\n"));
-    web.connection = connectionType.substr(12);
+    findConnectionType = message.find("Connection: ");
+    if (findConnectionType != std::string::npos){
+        connectionType = message.substr(message.find("Connection: "));
+        connectionType = connectionType.substr(0, connectionType.find("\r\n\r\n"));
+        web.connection = connectionType.substr(12);
+    }
+    else
+        web.connection = "text/plain";
 
     struct sockaddr_in *ip = (struct sockaddr_in *)res->ai_addr;
     void *addr = &(ip->sin_addr);
     inet_ntop(res->ai_family, addr, ipstr, sizeof(ipstr));
-    ipAddress = ipstr;
+    if (ipstr != ipAddress){
+        std::string serverNames;
+        std::string strigIpstr;
+
+        strigIpstr = ipstr;
+        std::cout << ipstr << std::endl;
+        std::cout << ipAddress << std::endl;
+        serverNames = web.getItemFromServerMap(web, static_cast<std::string>("Server " + strigIpstr+":"+port), "server_name");
+        std::cout << serverNames << std::endl;
+        if (serverNames == "wrong" || serverNames.find(ipAddress) == std::string::npos){
+            freeaddrinfo(res);
+            return false;
+        }
+        ipAddress = ipstr;
+    }
     freeaddrinfo(res);
 
     // Imprimir os resultados

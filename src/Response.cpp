@@ -107,26 +107,24 @@ std::string  Response::findLocationRoot(Server &web, std::string RequestPathReso
 std::string listDirectoriesAsButtons(Server &web, std::string& directoryPath) {
     std::string responseDirectory;
 
-    responseDirectory += "<html><head><title>Lista de Diretórios</title></head><body>";
+    responseDirectory += "<html><head><title>Directory</title></head><body>";
 
     DIR* dir;
     struct dirent* entry;
     if ((dir = opendir(directoryPath.c_str())) != NULL) {
         while ((entry = readdir(dir)) != NULL) {
-            //if (entry->d_type == DT_DIR) {
-                if (std::string(entry->d_name) != "." && std::string(entry->d_name) != "..") {
-                    if (web.getPathResource != "/"){
-                        responseDirectory = responseDirectory + "<form action=\"" + web.getPathResource + "/" + entry->d_name + "\">"
-                           + "<input type=\"submit\" value=\"" + entry->d_name + "\"/>"
-                           + "</form>";
-                    }
-                    else{
-                        responseDirectory = responseDirectory + "<form action=\" ./" + entry->d_name + "\">"
-                           + "<input type=\"submit\" value=\"" + entry->d_name + "\"/>"
-                           + "</form>";
-                    }
+            if (std::string(entry->d_name) != "." && std::string(entry->d_name) != "..") {
+                if (web.getPathResource != "/"){
+                    responseDirectory = responseDirectory + "<form action=\"" + web.getPathResource + "/" + entry->d_name + "\">"
+                       + "<input type=\"submit\" value=\"" + entry->d_name + "\"/>"
+                        + "</form>";
                 }
-            //}
+                else{
+                    responseDirectory = responseDirectory + "<form action=\" ./" + entry->d_name + "\">"
+                        + "<input type=\"submit\" value=\"" + entry->d_name + "\"/>"
+                        + "</form>";
+                }
+            }
         }
         closedir(dir);
     }

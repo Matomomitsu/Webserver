@@ -1,6 +1,6 @@
 server {
 	listen 127.0.0.1:15020;
-	server_name www.localhost.com localhost.com;
+	server_name localhost mtomomit.42.fr;
 	root .;
 	index index.html index.php;
 	error_page 404 /index.html;
@@ -28,7 +28,7 @@ server {
 
 server {
 	listen 127.0.0.1:3490;
-	server_name www.localhost.com localhost.com;
+	server_name localhost rarodrig.42.fr;
 	root .;
 	index index.html index.php;
 	error_page 404 /custom_404.html;asdasdasda
