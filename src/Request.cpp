@@ -41,9 +41,7 @@ void    Request::getCgiPath(Server &web)
 bool  Request::checkGetRequest( Server &web, const std::string& message, std::string method)
 {
     web.method = method;
-    //Encontra alinha inicial e final
     size_t startLine = message.find(method);
-    //size_t endLine = message.find("\r\n", startLine);
     int methodSize = method.length();
 
     std::string requisiton = message.substr(startLine, methodSize);
@@ -61,7 +59,6 @@ bool  Request::checkGetRequest( Server &web, const std::string& message, std::st
 
     size_t httpVersionStart = resourcePathEnd + 1;
 
-    // Extrair a versão HTTP
     std::string httpVersion = message.substr(httpVersionStart);
 
     size_t hostStart = message.find("Host: ");
@@ -74,10 +71,8 @@ bool  Request::checkGetRequest( Server &web, const std::string& message, std::st
     size_t hostEnd = message.find("\r\n", hostStart);
     std::string hostLine = message.substr(hostStart, hostEnd - hostStart);
 
-    // Extrair o valor do campo "Host"
-    std::string hostValue = hostLine.substr(6); // Remover "Host: "
+    std::string hostValue = hostLine.substr(6);
 
-    // Separar o IP e a porta
     size_t colonPos = hostValue.find(":");
     if (colonPos == std::string::npos)
     {
@@ -119,11 +114,10 @@ bool  Request::checkGetRequest( Server &web, const std::string& message, std::st
         std::string strigIpstr;
 
         strigIpstr = ipstr;
-        std::cout << ipstr << std::endl;
-        std::cout << ipAddress << std::endl;
         serverNames = web.getItemFromServerMap(web, static_cast<std::string>("Server " + strigIpstr+":"+port), "server_name");
-        std::cout << serverNames << std::endl;
-        if (serverNames == "wrong" || serverNames.find(ipAddress) == std::string::npos){
+        serverNames = " " + serverNames + " ";
+        if (serverNames == "wrong" || serverNames.find(" " + ipAddress + " ") == std::string::npos){
+            std::cerr << "URL can not communicate with this server" << std::endl;
             freeaddrinfo(res);
             return false;
         }
@@ -131,7 +125,6 @@ bool  Request::checkGetRequest( Server &web, const std::string& message, std::st
     }
     freeaddrinfo(res);
 
-    // Imprimir os resultados
     std::cout << "Método: " << requisiton << std::endl;
     std::cout << "Caminho do recurso: " << resourcePath << std::endl;
     std::cout << "Versão HTTP: " << httpVersion << std::endl;

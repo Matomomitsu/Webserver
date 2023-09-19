@@ -2,8 +2,6 @@
 # include "../parser/Parser.hpp"
 # include "./Webserver.hpp"
 
-//void createSocket(Server listServer)
-
 void run(Server &web){
     std::string port;
 

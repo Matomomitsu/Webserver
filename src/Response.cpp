@@ -46,11 +46,11 @@ std::vector<std::string> Response::splitPath(const std::string& path, char delim
 
 
 std::string returnContenType(std::string contentType){
-    std::ifstream file("./utils/contentType.txt"); // Abra o arquivo com os tipos de "Content-Type"
+    std::ifstream file("./utils/contentType.txt");
     std::vector<std::string> contentTypes;
     if (!file) {
         std::cerr << "Erro ao abrir o arquivo." << std::endl;
-        return "text/plain"; // Retorna uma string vazia em caso de erro
+        return "text/plain";
     }
     std::string line;
     while (std::getline(file, line)) {
@@ -83,7 +83,6 @@ std::string  Response::findLocationRoot(Server &web, std::string RequestPathReso
                         type = web.pathSegments[web.pathSegments.size() - 1].substr(findContentTypeReturn + 1);
                         web.contentType = returnContenType(type);
                     }
-                        //web.contentType = web.pathSegments[web.pathSegments.size() - 1].substr(findContentTypeReturn + 1);
                 }
             }
             if (web.locationRoot.empty())

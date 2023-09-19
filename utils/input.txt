@@ -23,7 +23,9 @@ server {
 	location /delete {
 		redirect /utils/delete.html;
 	}
-
+	location /index {
+		redirect /utils/index.html;
+	}
 }
 
 server {
