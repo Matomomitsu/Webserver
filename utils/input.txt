@@ -3,18 +3,16 @@ server {
 	server_name localhost mtomomit.42.fr;
 	root .;
 	index index.html index.php;
-	error_page 404 /index.html;
-	error_page 405 /custom_405.html;
-	cgi .php php-cgi;
 	cgi .py python3;
 	autoindex on;
 	location /utils {
-		limit_except GET POST DELETE;
+		limit_except GET;
 		index index.html index.php;
 		root ./utils;
 	}
 	location /utils/uploaded {
 		limit_except DELETE POST;
+		client_max_body_size 40;
 		root ./utils/uploaded;
 	}
 	location /post {
@@ -33,22 +31,28 @@ server {
 	server_name localhost rarodrig.42.fr;
 	root .;
 	index index.html index.php;
-	error_page 404 /custom_404.html;asdasdasda
-	error_page 405 /custom_405.html;asdasd
-	timeout 50;
-	cgi .php php-cgi .bataaaaaataaa;
+	error_page 404 ./utils/index.html;
 	cgi .py python3;
 	location /utils/uploaded {
 		limit_except DELETE POST;
 		root ./utils/uploaded;
 	}
 	location /utils {
-		limit_except GET POST DELETE;
+		limit_except GET;
 		index index.html index.php;
 		root ./utils;
 	}
 	location /delete {
 		limit_except DELETE;
 		root /test/www;
+	}
+	location /post {
+		redirect /utils/post.html;
+	}
+	location /delete {
+		redirect /utils/delete.html;
+	}
+	location /index {
+		redirect /utils/index.html;
 	}
 }

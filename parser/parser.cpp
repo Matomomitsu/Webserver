@@ -93,11 +93,8 @@ Server Parser::parserFile(std::string inputFilePath) {
     std::string port;
     Server serverInstance;
 
-    int errorPageCount = 0;
     bool insideLocationBlock = false;
-
     if (arquivo.is_open()) {
-         // Mapa para armazenar os blocos "server"
         std::string line;
         bool insideServerBlock = false;
 
@@ -106,7 +103,7 @@ Server Parser::parserFile(std::string inputFilePath) {
             if (line.substr(0, 8) == "server {"){
                 insideServerBlock = true;
             }
-            if (insideServerBlock) { //isso pode estar em outra função.
+            if (insideServerBlock) {
 
                 if (line.substr(0, 7) == "listen "){
                     ip = getIpFromInputFile(line);
@@ -130,10 +127,6 @@ Server Parser::parserFile(std::string inputFilePath) {
                 else if (line.substr(0, 13) == "limit_except " && !insideLocationBlock)
                     serverMap[ipFromServer]["limit_except"] =  getValuesFromArchvie(line);
                 else if (line.substr(0, 11) == "error_page "){
-                    errorPageCount++;
-                    std::stringstream ss;
-                    ss << errorPageCount;
-                    std::string stringValue = ss.str();
                     serverMap[ipFromServer]["error_page "+getErrorNumber(line)] =  getErrorPageValues(line, "error_page");
                 }
                 else if (line.substr(0, 4) == "cgi "){
@@ -149,7 +142,6 @@ Server Parser::parserFile(std::string inputFilePath) {
                         insideLocationBlock = false;
                         if (locationMap[ipFromServer]["root "+locationPath] == "")
                             locationMap[ipFromServer]["root "+locationPath] = serverMap[ipFromServer]["root"];
-                        //locationMap[ipFromServer]["index "+locationPath] += " " + serverMap[ipFromServer]["index"];
                     }
                     else if (line.substr(0, 9) == "location "){
                         locationMap[ipFromServer]["Path "+locationPath] =  locationPath;

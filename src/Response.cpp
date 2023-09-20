@@ -306,28 +306,31 @@ std::string Response::deleteResponse(Server &web, std::string pathToDelete){
     return(response);
 }
 
-std::string getErrorReturn(std::string path){
-    std::ifstream filetoOpen(path.c_str());
-    std::string content;
+std::string getErrorReturn(std::string path, std::string errorNum, Server &web){
+    std::string errorPage;
+    std::string content = "";
+    std::ifstream fileToOpen;
 
-    if (filetoOpen.is_open()){
-        std::string line;
-        while(std::getline(filetoOpen, line)){
-            content += line;
-        }
-        filetoOpen.close();
-    }
-    else
-    {
-        std::cout <<  "File Not Found, Please Check The path to default file of return" << std::endl;
-        std::string fileDefaultPath = "./utils/error_page/404.html";
-        std::ifstream filetoOpenDefault(fileDefaultPath.c_str());
-        if (filetoOpenDefault.is_open()){
+    errorPage = web.getItemFromServerMap(web, "Server " + web.hostMessageReturn, "error_page " + errorNum);
+    if (errorPage != "wrong"){
+        std::ifstream filetoOpen(errorPage.c_str());
+        if (filetoOpen.is_open()){
             std::string line;
-            while(std::getline(filetoOpenDefault, line)){
+            while(std::getline(filetoOpen, line)){
                 content += line;
             }
-            filetoOpenDefault.close();
+            filetoOpen.close();
+        }
+    }
+    if (content == "")
+    {
+        std::ifstream fileToOpenDefault(path.c_str());
+        if (fileToOpenDefault.is_open()){
+            std::string line;
+            while(std::getline(fileToOpenDefault, line)){
+                content += line;
+            }
+            fileToOpenDefault.close();
         }
     }
     return(content);
@@ -343,42 +346,42 @@ std::string Response::errorType(std::string erro, Server &web){
     if (erro.substr(0, 5) == "Error")
         web.connection = "close";
     if (erro == "Error 404"){
-        body = getErrorReturn("./utils/error_page/404.html");
+        body = getErrorReturn("./utils/error_page/404.html", "404", web);
         content = Response::createResponseMessageWithError(body, "404", "Not Found");
         return (content);
     }
     else if(erro == "Error 403"){
-        body = getErrorReturn("./utils/error_page/403.html");
+        body = getErrorReturn("./utils/error_page/403.html", "403", web);
         content = Response::createResponseMessageWithError(body, "403", "Forbidden");
         return (content);
     }
     else if(erro == "Error 400"){
-        body = getErrorReturn("./utils/error_page/400.html");
+        body = getErrorReturn("./utils/error_page/400.html", "400", web);
         content = Response::createResponseMessageWithError(body, "400", "Bad Request");
         return (content);
     }
     else if(erro == "Error 411"){
-        body = getErrorReturn("./utils/error_page/411.html");
+        body = getErrorReturn("./utils/error_page/411.html", "411", web);
         content = Response::createResponseMessageWithError(body, "411", "Length Required");
         return (content);
     }
     else if(erro == "Error 413"){
-        body = getErrorReturn("./utils/error_page/413.html");
+        body = getErrorReturn("./utils/error_page/413.html", "413", web);
         content = Response::createResponseMessageWithError(body, "413", "Request Entity too Large");
         return (content);
     }
     else if(erro == "Error 415"){
-        body = getErrorReturn("./utils/error_page/415.html");
+        body = getErrorReturn("./utils/error_page/415.html", "415", web);
         content = Response::createResponseMessageWithError(body, "415", "Unsupported Media Type");
         return (content);
     }
     else if(erro == "Error 405"){
-        body = getErrorReturn("./utils/error_page/405.html");
+        body = getErrorReturn("./utils/error_page/405.html", "405", web);
         content = Response::createResponseMessageWithError(body, "405", "Method Not Allowed");
         return (content);
     }
     else if(erro == "Error 500"){
-        body = getErrorReturn("./utils/error_page/500.html");
+        body = getErrorReturn("./utils/error_page/500.html", "500", web);
         content = Response::createResponseMessageWithError(body, "500", "Internal Server Error");
         return (content);
     }
