@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Sockets.cpp                                        :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/08/08 16:05:48 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/09/12 18:41:17 by mtomomit         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "Sockets.hpp"
 
 Sockets::Sockets(void){
@@ -49,7 +37,7 @@ void Sockets::setNonBlocking(int fd)
 	fcntl(fd, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
 }
 
-void	Sockets::createSockets(Server web, struct epoll_event *event, int epoll_fd)
+void	Sockets::createSockets(Server &web, struct epoll_event *event, int epoll_fd)
 {
 	for (std::map< std::string, std::map<std::string, std::string> >::iterator outerIt = web.serverMap.begin(); outerIt != web.serverMap.end(); ++outerIt)
 	{
@@ -73,6 +61,7 @@ void	Sockets::createSockets(Server web, struct epoll_event *event, int epoll_fd)
 		if (listen(sock, SOMAXCONN) == -1)
 			handleError("listen()", epoll_fd, servinfo);
 		event->events = EPOLLIN | EPOLLOUT;
+		event->data.u64 = 0;
 		event->data.fd = sock;
 		if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, sock, event) == -1)
 			handleError("epoll_ctl()", epoll_fd, servinfo);

@@ -142,7 +142,7 @@ void Response::addIndex(Server &web, std::string &path){
     std::string matchingLocationPath;
     std::string fileToReturn = "index.html";
     std::string temp;
-
+ 
     if (web.locationRoot != web.getItemFromServerMap(web, "Server " + web.hostMessageReturn, "root")){
         temp = web.getItemFromLocationMap(web, "Server " + web.hostMessageReturn, "index " + web.locationPath);
         if (temp != "wrong")
@@ -289,7 +289,7 @@ std::string Response::deleteResponse(Server &web, std::string pathToDelete){
         std::cout << "Arquivo no caminho " << rootPath << " Localizado." << std::endl;
         if (std::remove(filename) == 0) {
             std::cout << "Arquivo no caminho " << rootPath << " deletado." << std::endl;
-            std::string body = getResponseFileDefault("./utils/deleteSucces.html");
+            std::string body = getResponseFileDefault("./utils/deleteSuccess.html");
             response = Response::createResponseMessage(web, body);
             return(response);
         } else {

@@ -232,7 +232,10 @@ void Request::handleClient(Server web, int clientSock, Epoll *epoll, std::list<i
 		if (web.checkType(header))
 			printf("message in format\n");
         else{
-            http_response = Response::errorType("Error 400", web);
+            if (web.method == "")
+                http_response = Response::errorType("Error 405", web);
+            else
+                http_response = Response::errorType("Error 400", web);
             responses[clientSock].response = http_response;
             responses[clientSock].connection = "close";
             return ;

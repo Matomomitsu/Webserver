@@ -3,6 +3,9 @@ import cgitb
 import signal
 import sys
 
+#while(True):
+#   continue
+
 def handler(signum, frame):
     print ('Script took too long - Exiting...')
     sys.exit(1)

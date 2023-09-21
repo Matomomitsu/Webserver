@@ -4,13 +4,6 @@
 #include "./src/Sockets.hpp"
 #include "./src/Request.hpp"
 
-/*void sigIntHandlerFunc(int sig){
-    (void)sig;
-    std::cout << "\nFinishing the WebServer ...\n";
-    //webserver.finish();
-    exit(0);
-}*/
-
 bool stop_server = false;
 
 void signalHandler(int signal_num){

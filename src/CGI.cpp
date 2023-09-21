@@ -1,6 +1,8 @@
 #include "CGI.hpp"
 #include "Response.hpp"
 
+pid_t CGI::pid = 0;
+
 size_t hexToNumber(const std::string& hexString) {
     unsigned int result;
     std::stringstream ss;
@@ -155,7 +157,13 @@ std::vector<char>   CGI::handlePost(int &bytesReadInt)
     return (body);
 }
 
-std::string    CGI::receiveOutput(Server &web, int *pipefd, int *pipe2fd, pid_t &pid, std::vector<char> &body)
+void timeoutHandler(int sign)
+{
+    (void)sign;
+    kill(CGI::pid, SIGTERM);
+}
+
+std::string    CGI::receiveOutput(Server &web, int *pipefd, int *pipe2fd, std::vector<char> &body)
 {
     char                buffer[1024];
     std::string         output;
@@ -183,6 +191,7 @@ std::string    CGI::receiveOutput(Server &web, int *pipefd, int *pipe2fd, pid_t 
     }
     close(pipefd[0]);
     waitpid(pid, &status, 0);
+    alarm(0);
     if (status != 0)
         return ("Error 500");
     findContentTypeOutput = output.find("Content-Type");
@@ -200,7 +209,6 @@ std::string CGI::handleCgi(const std::string &fullRequestPathResource, Server &w
 {
     int pipefd[2];
     int pipe2fd[2];
-    pid_t pid;
     std::vector<char>   body;
     int                 bytesReadInt = 1;
 
@@ -228,11 +236,13 @@ std::string CGI::handleCgi(const std::string &fullRequestPathResource, Server &w
         return ("Error 400");
     pipe(pipefd);
     pipe(pipe2fd);
+    signal(SIGALRM, timeoutHandler);
+    alarm(5);
     pid = fork();
     if (pid == 0)
         this->execCgi(fullRequestPathResource, web, pipefd, pipe2fd);
     else if (pid > 0)
-        return (this->receiveOutput(web, pipefd, pipe2fd, pid, body));
+        return (this->receiveOutput(web, pipefd, pipe2fd, body));
     else
         std::cerr << "Fork error\n";
     return "Error 400";

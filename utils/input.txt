@@ -1,18 +1,21 @@
 server {
 	listen 127.0.0.1:15020;
 	server_name localhost mtomomit.42.fr;
-	root .;
-	index index.html index.php;
+	root ./utils;
+	index index.html;
 	cgi .py python3;
-	autoindex on;
 	location /utils {
-		limit_except GET;
-		index index.html index.php;
+		limit_except GET POST;
+		index index.html;
 		root ./utils;
 	}
 	location /utils/uploaded {
 		limit_except DELETE POST;
 		client_max_body_size 40;
+		root ./utils/uploaded;
+	}
+	location /uploaded {
+		limit_except DELETE POST;
 		root ./utils/uploaded;
 	}
 	location /post {
@@ -29,17 +32,22 @@ server {
 server {
 	listen 127.0.0.1:3490;
 	server_name localhost rarodrig.42.fr;
-	root .;
-	index index.html index.php;
+	root ./utils;
+	index index.html;
 	error_page 404 ./utils/index.html;
+	autoindex on;
 	cgi .py python3;
 	location /utils/uploaded {
 		limit_except DELETE POST;
 		root ./utils/uploaded;
 	}
+	location /uploaded {
+		limit_except DELETE POST;
+		root ./utils/uploaded;
+	}
 	location /utils {
-		limit_except GET;
-		index index.html index.php;
+		limit_except GET POST;
+		index index.html;
 		root ./utils;
 	}
 	location /delete {

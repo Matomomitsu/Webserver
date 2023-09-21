@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Sockets.hpp                                        :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/08/08 16:05:51 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/08/23 15:36:27 by mtomomit         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #ifndef SOCKETS_HPP
 # define SOCKETS_HPP
 
@@ -38,7 +26,7 @@ class Sockets {
 		Sockets & operator=(Sockets const & rhs);
 		Sockets(Sockets const & src);
 
-		void	createSockets(Server web, struct epoll_event *event, int epoll_fd);
+		void	createSockets(Server &web, struct epoll_event *event, int epoll_fd);
 		void 	setNonBlocking(int fd);
 		void	closeSockets(int epoll_fd);
 
