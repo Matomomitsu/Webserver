@@ -130,12 +130,13 @@ std::vector<char>   CGI::handlePost(int &bytesReadInt)
                 }
             }
             hexNumber = hexToNumber(hexString);
-            if (hexNumber > vecBuffer.size())
-                missingBytes = vecBuffer.size();
-            else
-                missingBytes = hexNumber;
+            missingBytes = hexNumber;
             while (bytesReadInt > 0 && chunkBytes != hexNumber)
             {
+                if (missingBytes < vecBuffer.size())
+                    bytesReadInt = recv(clientSock, vecBuffer.data(), missingBytes, 0);
+                else
+                    bytesReadInt = recv(clientSock, vecBuffer.data(), vecBuffer.size(), 0);
                 bytesReadInt = recv(clientSock, vecBuffer.data(), missingBytes, 0);
                 if (bytesReadInt > 0){
                     missingBytes -= bytesReadInt;

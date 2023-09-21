@@ -6,11 +6,23 @@
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/25 20:02:57 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/09/18 15:13:01 by mtomomit         ###   ########.fr       */
+/*   Updated: 2023/09/21 19:57:50 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Post.hpp"
+
+size_t hexToNumber(const std::vector<char>& hexVector) {
+    unsigned int result;
+    std::stringstream ss;
+
+    for (std::vector<char>::const_iterator it = hexVector.begin(); it != hexVector.end(); ++it) {
+        ss << *it;
+    }
+    ss << std::hex;
+    ss >> result;
+    return static_cast<size_t>(result);
+}
 
 void Post::getContentTypeData(std::string &header)
 {
@@ -139,6 +151,7 @@ void Post::getBoundaryHeaderData(std::vector<char> &body, std::size_t &bytesRead
         throw BadRequest();
     contentDisposition = std::string(body.begin() + findContentDisposition, body.end());
     contentDisposition = contentDisposition.substr(0, contentDisposition.find("\r\n"));
+    std::cout << contentDisposition << std::endl;
     findFilename = contentDisposition.find("filename=");
     if (findFilename != std::string::npos)
     {
@@ -200,6 +213,8 @@ void    Post::getFileData(std::vector<char>::iterator &findBoundary, std::vector
 
 void Post::handleBoundary(std::string fullRequestPathResource)
 {
+    if (contentLength == 0)
+        throw LengthRequired();
     std::vector<char> buffer(1024);
     std::vector<char> body;
     int bytesRead = 0;
@@ -244,7 +259,7 @@ void	Post::getBinaryContentDisposition(std::string &fullRequestPathResource, std
     findContentDispostion = header.find("Content-Disposition: ");
     if (findContentDispostion != std::string::npos)
     {
-        contentDisposition = header.substr(0, header.find("Content-Disposition: "));
+        contentDisposition = header.substr(header.find("Content-Disposition: "));
         contentDisposition = contentDisposition.substr(0, contentDisposition.find("\r\n"));
         findFilename = contentDisposition.find("filename=");
     }
@@ -265,26 +280,89 @@ void	Post::getBinaryContentDisposition(std::string &fullRequestPathResource, std
     }
 }
 
-void Post::handleBinary(const std::string &fullRequestPathResource)
+void Post::handleBinary(const std::string &fullRequestPathResource, Server &web)
 {
     std::vector<char> buffer(1024);
     std::vector<char> body;
     int bytesRead = 1;
     size_t bytesReadTotal = 0;
 
-    while (bytesReadTotal != contentLength && bytesRead > 0){
-        bytesRead = recv(clientSock, buffer.data(), buffer.size() - 1, 0);
-        if (bytesRead > 0)
-        {
-            bytesReadTotal += bytesRead;
-            body.insert(body.end(), buffer.begin(), buffer.begin() + bytesRead);
-            copyToFile(fullRequestPathResource, body.size(), body);
-            body.clear();
+    if (transferEncoding != "chunked"){
+        while (bytesReadTotal != contentLength && bytesRead > 0){
+            bytesRead = recv(clientSock, buffer.data(), buffer.size() - 1, 0);
+            if (bytesRead > 0)
+            {
+                bytesReadTotal += bytesRead;
+                body.insert(body.end(), buffer.begin(), buffer.begin() + bytesRead);
+                copyToFile(fullRequestPathResource, body.size(), body);
+                body.clear();
+            }
         }
+        if (bytesReadTotal != contentLength || bytesRead <= 0)
+                throw InternalServerError();
     }
-    if (bytesReadTotal != contentLength || bytesRead <= 0)
-        throw InternalServerError();
+    else{
+        std::vector<char> hexVector;
+        std::vector<char>    vecBuffer(2);
+        size_t  chunkBytes = 0;
+        size_t  missingBytes = 0;
+        size_t hexNumber = 1;
+        std::vector<char> CRLF;
+        std::string clientMaxBodySize;
+        CRLF.push_back('\r');
+        CRLF.push_back('\n');
+
+        contentLength = 0;
+        if (web.locationPath.empty())
+            clientMaxBodySize = web.getItemFromServerMap(web, "Server " + web.hostMessageReturn, "client_max_body_size");
+        else
+            clientMaxBodySize = web.getItemFromLocationMap(web, "Server " + web.hostMessageReturn, "client_max_body_size " + web.locationPath);
+        while (hexNumber > 0 && bytesRead > 0)
+        {
+            while (std::search(hexVector.begin(), hexVector.end(), CRLF.begin(), CRLF.end()) == hexVector.end())
+            {
+                bytesRead = recv(clientSock, vecBuffer.data(), vecBuffer.size() - 1, 0);
+                vecBuffer[1] =  '\0';
+                if (bytesRead > 0){
+                    hexVector.insert(hexVector.end(), vecBuffer.begin(), vecBuffer.begin() + bytesRead);
+                }
+            }
+            hexNumber = hexToNumber(hexVector);
+            missingBytes = hexNumber;
+            while (bytesRead > 0 && chunkBytes != hexNumber)
+            {
+                if (missingBytes < buffer.size())
+                    bytesRead = recv(clientSock, buffer.data(), missingBytes, 0);
+                else
+                    bytesRead = recv(clientSock, buffer.data(), buffer.size(), 0);
+                if (bytesRead > 0){
+                    missingBytes -= bytesRead;
+                    chunkBytes += bytesRead;
+                    contentLength += bytesRead;
+                    if (clientMaxBodySize != "wrong")
+                    {
+                        if (contentLength > static_cast<long unsigned int>(atol(clientMaxBodySize.c_str())))
+                            throw RequestEntityTooLarge();
+                    }
+                    body.insert(body.end(), buffer.begin(), buffer.begin() + bytesRead);
+                    copyToFile(fullRequestPathResource, body.size(), body);
+                    body.clear();
+                }
+            }
+            if (bytesRead > 0)
+            {
+                bytesRead = recv(clientSock, buffer.data(), 2, 0);
+                if (bytesRead < 2 && bytesRead > 0)
+                    bytesRead = recv(clientSock, buffer.data(), 1, 0);
+            }
+            hexVector.clear();
+            chunkBytes = 0;
+        }
+        if (bytesRead <= 0)
+            throw InternalServerError();
+    }
 }
+
 
 std::string  Post::createResponseMessage(std::string &fullRequestPathResource){
     std::string response = "HTTP/1.1 201 Created\r\n"
@@ -314,14 +392,13 @@ std::string Post::postResponse(Server &web, std::string RequestPathResource, std
     try{
         this->getContentTypeData(header);
         this->getLength(header, web);
-        if (contentLength == 0)
-            throw LengthRequired();
+        this->getTransferEncoding(header);
         if (this->contentType == "multipart/form-data")
             this->handleBoundary(fullRequestPathResource);
         else
         {
             this->getBinaryContentDisposition(fullRequestPathResource, header);
-            this->handleBinary(fullRequestPathResource);
+            this->handleBinary(fullRequestPathResource, web);
         }
     }
     catch(std::exception &e){

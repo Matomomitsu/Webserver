@@ -6,7 +6,7 @@
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/25 20:02:59 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/09/17 20:47:32 by mtomomit         ###   ########.fr       */
+/*   Updated: 2023/09/21 19:57:43 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,7 +51,7 @@ class Post {
 		void		getFileData(std::vector<char>::iterator &findBoundary, std::vector<char> &body, std::vector<char> &buffer, size_t &bytesReadTotal, int &bytesRead);
 		void		handleBoundary(std::string fullRequestPathResource);
 		void		getBoundaryHeaderData(std::vector<char> &body, std::size_t &bytesReadTotal, std::string &fullRequestPathResource);
-		void		handleBinary(const std::string &fullRequestPathResource);
+		void		handleBinary(const std::string &fullRequestPathResource, Server &web);
 		void		getBinaryContentDisposition(std::string &fullRequestPathResource, std::string &header);
 		void		copyToFile(const std::string &fullRequestPathResource, std::size_t limiter, std::vector<char> &body);
 		std::string	createResponseMessage(std::string &fullRequestPathResource);
