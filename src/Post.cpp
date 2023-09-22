@@ -6,7 +6,7 @@
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/25 20:02:57 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/09/21 19:57:50 by mtomomit         ###   ########.fr       */
+/*   Updated: 2023/09/22 13:51:03 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,11 +85,13 @@ void Post::getTransferEncoding(std::string header)
     findTransferEncoding = header.find("Transfer-Encoding: ");
     if (findTransferEncoding != std::string::npos)
         stringTransferEncoding = header.substr(findTransferEncoding);
-    else
+    else if (contentLength == 0)
         throw LengthRequired();
+    else
+        return ;
     stringTransferEncoding = stringTransferEncoding.substr(0, stringTransferEncoding.find("\r\n"));
     transferEncoding = stringTransferEncoding.substr(19);
-    if (transferEncoding.find("chunked") == std::string::npos)
+    if (transferEncoding.find("chunked") == std::string::npos && contentLength == 0)
         throw LengthRequired();
 }
 
