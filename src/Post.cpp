@@ -6,7 +6,7 @@
 /*   By: mtomomit <mtomomit@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/25 20:02:57 by mtomomit          #+#    #+#             */
-/*   Updated: 2023/09/22 13:51:03 by mtomomit         ###   ########.fr       */
+/*   Updated: 2023/09/25 14:03:52 by mtomomit         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -276,7 +276,7 @@ void	Post::getBinaryContentDisposition(std::string &fullRequestPathResource, std
     }
     else
     {
-        std::ofstream file((fullRequestPathResource + filename).c_str(), std::ios::binary);
+        std::ofstream file((fullRequestPathResource + "file").c_str(), std::ios::binary);
         file.close();
         filename = "";
     }
