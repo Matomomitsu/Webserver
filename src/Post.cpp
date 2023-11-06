@@ -12,11 +12,11 @@
 
 #include "Post.hpp"
 
-size_t hexToNumber(const std::vector<char>& hexVector) {
+static size_t hexToNumber(const std::string& hexVector) {
     unsigned int result;
     std::stringstream ss;
 
-    for (std::vector<char>::const_iterator it = hexVector.begin(); it != hexVector.end(); ++it) {
+    for (std::string::const_iterator it = hexVector.begin(); it != hexVector.end(); ++it) {
         ss << *it;
     }
     ss << std::hex;
@@ -95,59 +95,29 @@ void Post::getTransferEncoding(std::string header)
         throw LengthRequired();
 }
 
-void    initializeContentDispositionMarker(std::vector<char> &contentDispositionMarker){
-    contentDispositionMarker.push_back('C');
-    contentDispositionMarker.push_back('o');
-    contentDispositionMarker.push_back('n');
-    contentDispositionMarker.push_back('t');
-    contentDispositionMarker.push_back('e');
-    contentDispositionMarker.push_back('n');
-    contentDispositionMarker.push_back('t');
-    contentDispositionMarker.push_back('-');
-    contentDispositionMarker.push_back('D');
-    contentDispositionMarker.push_back('i');
-    contentDispositionMarker.push_back('s');
-    contentDispositionMarker.push_back('p');
-    contentDispositionMarker.push_back('o');
-    contentDispositionMarker.push_back('s');
-    contentDispositionMarker.push_back('i');
-    contentDispositionMarker.push_back('t');
-    contentDispositionMarker.push_back('i');
-    contentDispositionMarker.push_back('o');
-    contentDispositionMarker.push_back('n');
-    contentDispositionMarker.push_back(':');
-    contentDispositionMarker.push_back(' ');
-}
-
-void Post::getBoundaryHeaderData(std::vector<char> &body, std::size_t &bytesReadTotal, std::string &fullRequestPathResource)
+void Post::getBoundaryHeaderData(std::string &body, std::size_t &bytesReadTotal, std::string &fullRequestPathResource)
 {
     std::size_t findContentDisposition;
     std::size_t findFilename;
     std::string header;
     char        buffer[2];
     int         bytesRead = 1;
-    std::vector<char>::iterator headerEnd;
-    std::vector<char> doubleCRLF;
+    std::string::iterator headerEnd;
+    std::string doubleCRLF="\r\n\r\n";
 
-    doubleCRLF.push_back('\r');
-    doubleCRLF.push_back('\n');
-    doubleCRLF.push_back('\r');
-    doubleCRLF.push_back('\n');
     headerEnd = std::search(body.begin(), body.end(), doubleCRLF.begin(), doubleCRLF.end());
     while (headerEnd == body.end() && bytesRead > 0)
     {
         bytesRead = recv(clientSock, buffer, sizeof(buffer) - 1, 0);
         if (bytesRead > 0){
             bytesReadTotal += bytesRead;
-            buffer[bytesRead] = 0;
             body.insert(body.end(), buffer, buffer + bytesRead);
             headerEnd = std::search(body.begin(), body.end(), doubleCRLF.begin(), doubleCRLF.end());
         }
     }
     if (headerEnd == body.end() || bytesRead <= 0)
         throw InternalServerError();
-    std::vector<char> contentDispositionMarker;
-    initializeContentDispositionMarker(contentDispositionMarker);
+    std::string contentDispositionMarker = "Content-Disposition: ";
     findContentDisposition = std::search(body.begin(), body.end(), contentDispositionMarker.begin(), contentDispositionMarker.end()) - body.begin();
     if (findContentDisposition == body.size())
         throw BadRequest();
@@ -167,10 +137,10 @@ void Post::getBoundaryHeaderData(std::vector<char> &body, std::size_t &bytesRead
         std::ofstream file((fullRequestPathResource + "file").c_str(), std::ios::out | std::ios::binary);
         file.close();
     }
-    body = std::vector<char>(headerEnd + 4, body.end());
+    body = std::string(headerEnd + 4, body.end());
 }
 
-void Post::copyToFile(const std::string &fullRequestPathResource, std::size_t limiter, std::vector<char> &body)
+void Post::copyToFile(const std::string &fullRequestPathResource, std::size_t limiter, std::string &body)
 {
     if (filename != ""){
         std::ofstream file((fullRequestPathResource + filename).c_str(), std::ios::out | std::ios::binary | std::ios_base::app);
@@ -188,9 +158,9 @@ void Post::copyToFile(const std::string &fullRequestPathResource, std::size_t li
     }
 }
 
-void    Post::getFileData(std::vector<char>::iterator &findBoundary, std::vector<char> &body, std::vector<char> &buffer, size_t &bytesReadTotal, int &bytesRead)
+void    Post::getFileData(std::string::iterator &findBoundary, std::string &body, std::vector<char> &buffer, size_t &bytesReadTotal, int &bytesRead)
 {
-    std::vector<char> mainBoundaryVec(mainBoundary.begin(), mainBoundary.end());
+    std::string mainBoundaryVec(mainBoundary.begin(), mainBoundary.end());
     size_t  bytesReadFile;
 
     bytesReadFile = bytesRead;
@@ -218,20 +188,18 @@ void Post::handleBoundary(std::string fullRequestPathResource)
     if (contentLength == 0)
         throw LengthRequired();
     std::vector<char> buffer(1024);
-    std::vector<char> body;
+    std::string body;
     int bytesRead = 0;
     bytesRead = recv(clientSock, buffer.data(), buffer.size() - 1, 0);
     if (bytesRead <= 0)
         throw InternalServerError();
     size_t bytesReadTotal = bytesRead;
-    std::vector<char>::iterator findBoundary;
+    std::string::iterator findBoundary;
 
-    std::vector<char> mainBoundaryVec(mainBoundary.begin(), mainBoundary.end());
+    std::string mainBoundaryVec(mainBoundary.begin(), mainBoundary.end());
     buffer[bytesRead] = 0;
     body.insert(body.end(), buffer.begin(), buffer.begin() + bytesRead);
-    std::vector<char> CRLF;
-    CRLF.push_back('\r');
-    CRLF.push_back('\n');
+    std::string CRLF = "\r\n";
     if (!std::equal(body.begin() + 2, body.begin() + mainBoundaryVec.size(), mainBoundaryVec.begin()))
         throw BadRequest();
     while (bytesReadTotal != contentLength || !body.empty()){
@@ -240,7 +208,7 @@ void Post::handleBoundary(std::string fullRequestPathResource)
             if (findBoundary != body.begin() + 2){
                 this->copyToFile(fullRequestPathResource, findBoundary - body.begin() - 4, body);
             }
-            body = std::vector<char>(findBoundary + mainBoundaryVec.size() + 2, body.end());
+            body = std::string(findBoundary + mainBoundaryVec.size() + 2, body.end());
             if (!std::equal(body.begin(), body.begin() + 2, CRLF.begin()))
                 this->getBoundaryHeaderData(body, bytesReadTotal, fullRequestPathResource);
             else
@@ -285,7 +253,7 @@ void	Post::getBinaryContentDisposition(std::string &fullRequestPathResource, std
 void Post::handleBinary(const std::string &fullRequestPathResource, Server &web)
 {
     std::vector<char> buffer(1024);
-    std::vector<char> body;
+    std::string body;
     int bytesRead = 1;
     size_t bytesReadTotal = 0;
 
@@ -304,15 +272,13 @@ void Post::handleBinary(const std::string &fullRequestPathResource, Server &web)
                 throw InternalServerError();
     }
     else{
-        std::vector<char> hexVector;
+        std::string hexVector;
         std::vector<char>    vecBuffer(2);
         size_t  chunkBytes = 0;
         size_t  missingBytes = 0;
         size_t hexNumber = 1;
-        std::vector<char> CRLF;
+        std::string CRLF = "\r\n";
         std::string clientMaxBodySize;
-        CRLF.push_back('\r');
-        CRLF.push_back('\n');
 
         contentLength = 0;
         if (web.locationPath.empty())

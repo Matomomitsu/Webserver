@@ -48,12 +48,12 @@ class Post {
 		void		getContentTypeData(std::string &header);
 		void		getLength(std::string header, Server &web);
 		void 		getTransferEncoding(std::string header);
-		void		getFileData(std::vector<char>::iterator &findBoundary, std::vector<char> &body, std::vector<char> &buffer, size_t &bytesReadTotal, int &bytesRead);
+		void		getFileData(std::string::iterator &findBoundary, std::string &body, std::vector<char> &buffer, size_t &bytesReadTotal, int &bytesRead);
 		void		handleBoundary(std::string fullRequestPathResource);
-		void		getBoundaryHeaderData(std::vector<char> &body, std::size_t &bytesReadTotal, std::string &fullRequestPathResource);
+		void		getBoundaryHeaderData(std::string &body, std::size_t &bytesReadTotal, std::string &fullRequestPathResource);
 		void		handleBinary(const std::string &fullRequestPathResource, Server &web);
 		void		getBinaryContentDisposition(std::string &fullRequestPathResource, std::string &header);
-		void		copyToFile(const std::string &fullRequestPathResource, std::size_t limiter, std::vector<char> &body);
+		void		copyToFile(const std::string &fullRequestPathResource, std::size_t limiter, std::string &body);
 		std::string	createResponseMessage(std::string &fullRequestPathResource);
 
 		class	BadRequest : public std::exception{
